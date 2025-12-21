@@ -2,10 +2,27 @@ version: "3.9"
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: nest-api
     env_file:
       - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
     ports:
-      - "8000:8000"
+      - "8000:3000"  # host:container (mapeia 8000 local para 3000 interno)
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - nest-network
+
+networks:
+  nest-network:
+    driver: bridge

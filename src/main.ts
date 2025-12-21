@@ -10,6 +10,8 @@ async function bootstrap() {
     allowedHeaders: '*',
   });
 
-  await app.listen(process.env.PORT ?? 8000);
+  const port = process.env.PORT || 3000;
+  console.log(`App rodando na porta ${port}`); // Para debug
+  await app.listen(port, '0.0.0.0'); // '0.0.0.0' para Docker/Railway
 }
 bootstrap();
