@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { databaseConfig } from './database/database.config';
 import { AuthModule } from './auth/auth.module';
 import { PlansModule } from './plans/plans.module';
+import { ChurchModule } from './church/church.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { PlansModule } from './plans/plans.module';
     }),
     TypeOrmModule.forRoot(databaseConfig),
     AuthModule,
-    PlansModule
+    PlansModule,
+    ChurchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

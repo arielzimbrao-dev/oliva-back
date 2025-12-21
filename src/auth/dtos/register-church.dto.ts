@@ -33,34 +33,41 @@ export class ProfileDto {
   baptized: boolean;
 }
 
+export class AddressDto {
+  @IsOptional()
+  @IsString()
+  street?: string;
+
+  @IsOptional()
+  @IsString()
+  number?: string;
+
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+}
+
 export class ChurchDto {
   @IsString()
   @IsNotEmpty()
   name: string;
 
   @IsOptional()
-  @IsString()
-  addressStreet?: string;
-
-  @IsOptional()
-  @IsString()
-  addressNumber?: string;
-
-  @IsOptional()
-  @IsString()
-  addressZipCode?: string;
-
-  @IsOptional()
-  @IsString()
-  addressCity?: string;
-
-  @IsOptional()
-  @IsString()
-  addressState?: string;
-
-  @IsOptional()
-  @IsString()
-  addressCountry?: string;
+  @ValidateNested()
+  @Type(() => AddressDto)
+  address?: AddressDto;
 
   @IsOptional()
   @IsDateString()
