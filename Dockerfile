@@ -1,42 +1,25 @@
-# Etapa 1: dependências e build
-FROM node:18-alpine AS builder
-
+# Development stage (installs all deps including dev)
+FROM node:18-alpine AS development
 WORKDIR /app
-
-# Copia apenas arquivos de dependência primeiro (melhor cache)
 COPY package*.json ./
-RUN npm ci --only=production --legacy-peer-deps
+RUN npm ci
 
-# Copia tsconfig e src para build
+# Build stage (uses dev deps to compile, then prunes to production)
+FROM node:18-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+COPY --from=development /app/node_modules ./node_modules
 COPY tsconfig*.json ./
 COPY src/ ./src/
 RUN npm run build
-
-# Etapa 2: imagem final de produção (ENXUTA)
-FROM node:18-alpine AS production
-
-WORKDIR /app
-
-# Configurações de produção
 ENV NODE_ENV=production
-ENV PORT=3000
+RUN npm ci --only=production && npm cache clean --force
 
-# Instala apenas produção (sem devDependencies)
-COPY package*.json ./
-RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
-
-# Copia apenas dist (buildado) e package.json
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-
-# Cria usuário não-root (segurança)
-RUN addgroup --gid 1001 nodejs && \
-    adduser --uid 1001 --ingroup nodejs nestjs && \
-    chown -R nestjs:nodejs /app
-USER nestjs
-
-EXPOSE ${PORT}
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${PORT}/health || exit 1
-
+# Production stage (minimal runtime image)
+FROM node:18-alpine AS production
+WORKDIR /app
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+EXPOSE 3000
+USER node
 CMD ["node", "dist/main.js"]
