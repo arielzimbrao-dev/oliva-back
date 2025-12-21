@@ -1,8 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-import { RegisterChurchDto, RegisterChurchResultDto } from '../auth/dtos/register-church.dto';
+import { RegisterChurchDto } from '../auth/dtos/register-church.dto';
 import { Plan } from '../entities/plan.entity';
 import { Church } from '../entities/church.entity';
 import { User } from '../entities/user.entity';
@@ -11,12 +10,9 @@ import { ChurchSubscription } from '../entities/church-subscription.entity';
 
 @Injectable()
 export class ChurchService {
-  constructor(
-    private readonly dataSource: DataSource,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
 
-  async registerChurch(dto: RegisterChurchDto): Promise<RegisterChurchResultDto> {
+  async registerChurch(dto: RegisterChurchDto): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -85,21 +81,9 @@ export class ChurchService {
       });
       const savedSubscription = await queryRunner.manager.save(ChurchSubscription, subscription);
 
-      const payload = { sub: savedUser.id, email: savedUser.email, churchId: savedChurch.id, role: savedUser.role };
-
-      const accessToken = this.jwtService.sign(payload, { algorithm: 'RS256', expiresIn: '15m' });
-      const refreshToken = this.jwtService.sign(payload, { algorithm: 'RS256', expiresIn: '7d' });
-
       await queryRunner.commitTransaction();
 
-      return {
-        accessToken,
-        refreshToken,
-        user: savedUser,
-        member: savedMember,
-        church: savedChurch,
-        subscription: savedSubscription,
-      } as RegisterChurchResultDto;
+      return;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
