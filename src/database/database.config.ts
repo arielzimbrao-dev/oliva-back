@@ -4,6 +4,7 @@ import { Plan } from '../entities/plan.entity';
 import { ChurchSubscription } from '../entities/church-subscription.entity';
 import { User } from '../entities/user.entity';
 import { Member } from '../entities/member.entity';
+import { Role } from '../entities/role.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -12,7 +13,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || 'oliva_db',
-  entities: [Church, Plan, ChurchSubscription, User, Member],
+  entities: [Church, Plan, ChurchSubscription, User, Member, Role],
   migrations: ['dist/migrations/*.js'],
   // Enable schema sync when NODE_ENV is not 'production' or when explicitly requested
   // Set TYPEORM_SYNC=true in your .env for local/dev environments to force sync
