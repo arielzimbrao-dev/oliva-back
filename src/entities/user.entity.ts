@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Member } from './member.entity';
 import { Church } from './church.entity';
+import { Role } from './role.entity';
 
 @Entity('users')
 @Index(['churchId'])
@@ -27,8 +28,12 @@ export class User {
   @Column()
   password: string;
 
-  @Column()
-  role: string; // ADMIN, USER
+  @Column({ nullable: true })
+  roleId: string;
+
+  @ManyToOne(() => Role, { nullable: false, eager: true })
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
 
   @Column()
   state: string; // ACTIVE, INACTIVE

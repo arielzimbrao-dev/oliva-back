@@ -7,6 +7,7 @@ import { Church } from '../entities/church.entity';
 import { User } from '../entities/user.entity';
 import { Member } from '../entities/member.entity';
 import { ChurchSubscription } from '../entities/church-subscription.entity';
+import { Role } from '../entities/role.entity';
 
 @Injectable()
 export class ChurchService {
@@ -25,6 +26,9 @@ export class ChurchService {
 
       const plan = await queryRunner.manager.findOne(Plan, { where: { id: planDto.planId } });
       if (!plan) throw new BadRequestException('Invalid plan');
+
+      const adminRole = await queryRunner.manager.findOne(Role, { where: { slug: 'ADMIN' } });
+      if (!adminRole) throw new BadRequestException('Admin role not found');
 
       const addr = churchDto.address
         ? [churchDto.address.street, churchDto.address.number, churchDto.address.city, churchDto.address.state, churchDto.address.country, churchDto.address.postalCode]
@@ -49,7 +53,7 @@ export class ChurchService {
       const user = queryRunner.manager.create(User, {
         email: credentials.email,
         password: hashed,
-        role: 'ADMIN',
+        role: adminRole,
         state: 'ACTIVE',
         church: savedChurch,
       });

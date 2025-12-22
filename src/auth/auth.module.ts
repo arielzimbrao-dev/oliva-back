@@ -11,11 +11,12 @@ import { Church } from '../entities/church.entity';
 import { Member } from '../entities/member.entity';
 import { Plan } from '../entities/plan.entity';
 import { ChurchSubscription } from '../entities/church-subscription.entity';
+import { Role } from '../entities/role.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Church, Member]),
+    TypeOrmModule.forFeature([User, Church, Member, Role]),
     JwtModule.registerAsync({
       useFactory: () => {
         let privateKey = process.env.RSA_PRIVATE_KEY
