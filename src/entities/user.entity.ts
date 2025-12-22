@@ -8,6 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Member } from './member.entity';
 import { Church } from './church.entity';
@@ -43,6 +44,9 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @Column({ nullable: true })
   confirmCode?: string;
