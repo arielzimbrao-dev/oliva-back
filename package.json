@@ -12,8 +12,7 @@
     "start:dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/main.ts",
     "start:debug": "ts-node-dev --respawn --transpile-only --inspect=9229 -r tsconfig-paths/register src/main.ts",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
-    
+    "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
