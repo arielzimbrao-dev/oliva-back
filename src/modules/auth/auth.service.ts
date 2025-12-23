@@ -1,36 +1,24 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { User } from '../entities/user.entity';
-import { Church } from '../entities/church.entity';
-import { Member } from '../entities/member.entity';
+import { UserRepository } from '../../entities/repository/user.repository';
+import { cryptoUtils } from 'src/common/util/crypto.utils';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    @InjectRepository(User) private userRepo: Repository<User>,
-    @InjectRepository(Church) private churchRepo: Repository<Church>,
-    @InjectRepository(Member) private memberRepo: Repository<Member>,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private userRepo: UserRepository, private jwtService: JwtService) {}
 
   async login(email: string, password: string) {
-    const user = await this.userRepo.findOne({
-      where: { email },
-      relations: ['church', 'members'],
-    });
+    const user = await this.userRepo.findOne({ where: { email } } as any);
 
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException();
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) throw new UnauthorizedException('Invalid credentials');
+    const ok = await cryptoUtils.compare(password, user.password);
+    if (!ok) throw new UnauthorizedException();
 
     const payload = { sub: user.id, email: user.email, churchId: user.churchId, role: user.role ? { slug: user.role.slug, name: user.role.name } : undefined };
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, { expiresIn: '15m' }),
-      this.jwtService.signAsync(payload, { expiresIn: '7d' }),
+      this.jwtService.signAsync(payload, { expiresIn: '60m' }),
+      this.jwtService.signAsync(payload, { expiresIn: '24h' }),
     ]);
 
     return {

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { UserService } from './user.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt/jwt.auth.guard';
+import { NoAccessPermissionError } from 'src/common/exceptions/exception';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -12,7 +12,7 @@ export class UserController {
   async listUsers(@Request() req) {
     // Verificar se é admin
     if (req.user?.role?.slug !== 'ADMIN') {
-      throw new Error('Access denied. Admin only.');
+      throw new NoAccessPermissionError();
     }
     return await this.userService.listUsers();
   }
@@ -21,7 +21,7 @@ export class UserController {
   async getUserById(@Param('id') id: string, @Request() req) {
     // Verificar se é admin
     if (req.user?.role?.slug !== 'ADMIN') {
-      throw new Error('Access denied. Admin only.');
+      throw new NoAccessPermissionError();
     }
     return await this.userService.getUserById(id);
   }
@@ -33,7 +33,7 @@ export class UserController {
   ) {
     // Verificar se é admin
     if (req.user?.role?.slug !== 'ADMIN') {
-      throw new Error('Access denied. Admin only.');
+      throw new NoAccessPermissionError();
     }
     return await this.userService.createUser(
       body.email,
@@ -51,7 +51,7 @@ export class UserController {
   ) {
     // Verificar se é admin
     if (req.user?.role?.slug !== 'ADMIN') {
-      throw new Error('Access denied. Admin only.');
+      throw new NoAccessPermissionError();
     }
     return await this.userService.updateUser(id, body);
   }
@@ -60,7 +60,7 @@ export class UserController {
   async deleteUser(@Param('id') id: string, @Request() req) {
     // Verificar se é admin
     if (req.user?.role?.slug !== 'ADMIN') {
-      throw new Error('Access denied. Admin only.');
+      throw new NoAccessPermissionError();
     }
     await this.userService.deleteUser(id);
     return { message: 'User deleted successfully' };

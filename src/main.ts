@@ -1,17 +1,38 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as dotenv from 'dotenv';
+import { json } from 'express';
+import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
+
+dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(json({ limit: '50mb' }));
+  app.enableCors();
+  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
-  app.enableCors({
-    origin: true, // reflect request origin, effectively allowing all
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: '*',
+  const options = new DocumentBuilder()
+    .setTitle('Oliva API')
+    .setDescription('Oliva api description')
+    .setVersion('1.0')
+    .addTag('oliva-api')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, options);
+
+  SwaggerModule.setup('api_doc', app, document, {
+    customSiteTitle: 'Oliva API Doc.',
   });
 
-  const port = process.env.PORT || 3000;
-  console.log(`App rodando na porta ${port}`); // Para debug
-  await app.listen(port, '0.0.0.0'); // '0.0.0.0' para Docker/Railway
+  const port = process.env.APP_PORT
+    ? parseInt(process.env.APP_PORT, 10)
+    : process.env.PORT
+      ? parseInt(process.env.PORT, 10)
+      : 3000;
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();

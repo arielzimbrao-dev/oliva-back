@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Plan } from '../entities/plan.entity';
 import { PlanDto } from './dtos/plan.dto';
+import { PlanRepository } from 'src/entities/repository/plan.entity';
 
 @Injectable()
 export class PlansService {
   constructor(
-    @InjectRepository(Plan) private planRepo: Repository<Plan>,
+    private planRepo: PlanRepository,
   ) {}
 
   async getPlans(): Promise<PlanDto[]> {
-    const plans = await this.planRepo.find();
+    const plans = await this.planRepo.findAll();
+    console.log(plans);
     return plans.map(plan => ({
       id: plan.id,
       name: plan.name,

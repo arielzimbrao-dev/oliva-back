@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn } from 'typeorm';
 import { ChurchSubscription } from './church-subscription.entity';
 
 @Entity('plans')
@@ -23,8 +23,10 @@ export class Plan {
 
   @Column({ default: 99999999 })
   memberLimit: number; 
-  
 
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date;
+  
   @Column({ default: 0 })
   freeDays: number; // Trial period
 
