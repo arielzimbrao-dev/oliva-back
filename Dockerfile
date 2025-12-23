@@ -14,7 +14,6 @@ COPY tsconfig*.json ./
 COPY src/ ./src/
 RUN npm run build
 RUN npm run migration:run || true
-RUN npm run seed || true
 ENV NODE_ENV=production
 RUN npm ci --only=production && npm cache clean --force
 

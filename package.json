@@ -13,10 +13,7 @@
     "start:debug": "ts-node-dev --respawn --transpile-only --inspect=9229 -r tsconfig-paths/register src/main.ts",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
-    "migration:generate": "ts-node ./node_modules/typeorm/cli.js migration:generate src/database/migrations/AutoMigration -d src/database/data-source.ts",
-    "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
-    "migration:create": "ts-node ./node_modules/typeorm/cli.js migration:create src/database/migrations/ManualMigration",
-    "seed": "ts-node src/database/seed.ts"
+    
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

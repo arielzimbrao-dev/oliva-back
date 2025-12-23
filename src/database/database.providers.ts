@@ -33,7 +33,48 @@ export const databaseProviders = [
         logging: true,
       });
 
-      return dataSource.initialize();
+      const ds = await dataSource.initialize();
+
+      // Função para popular/atualizar roles e plans
+      async function ensureDefaults() {
+        const roleRepo = ds.getRepository(Role);
+        const planRepo = ds.getRepository(Plan);
+
+        // Roles
+        const roles = [
+          { slug: 'ADMIN', name: 'Administrador', description: 'Acesso total' },
+          { slug: 'TREASURY', name: 'Tesouraria', description: 'Financeiro' },
+          { slug: 'SECRETARY', name: 'Secretária', description: 'Secretaria' },
+          { slug: 'MEMBER', name: 'Membro', description: 'Membro comum' },
+        ];
+        for (const role of roles) {
+          const exists = await roleRepo.findOne({ where: { slug: role.slug } });
+          if (!exists) {
+            await roleRepo.save(role);
+          } else {
+            await roleRepo.update({ slug: role.slug }, role);
+          }
+        }
+
+        // Plans
+        const plans = [
+          { id: 'e7274c09-35a5-427c-9188-a921ae0fc38b', name: 'Trial', description: 'Unlimited members', amountDolar: '0.00', amountEuro: '0.00', amountReal: '0.00', memberLimit: 999999999, freeDays: 15 },
+          { id: '01dcf308-43a1-485b-912b-b10bb0040d77', name: 'Bronze', description: 'Up to 500 members', amountDolar: '60.00', amountEuro: '50.00', amountReal: '320.00', memberLimit: 500, freeDays: 0 },
+          { id: 'f1a74eba-81c3-42ae-a434-fda56cd3833c', name: 'Silver', description: 'Up to 1000 members', amountDolar: '120.00', amountEuro: '100.00', amountReal: '650.00', memberLimit: 1000, freeDays: 0 },
+          { id: 'd9192d1d-a1b4-44c4-a52a-6759dd3edc4d', name: 'Gold', description: 'Unlimited members', amountDolar: '300.00', amountEuro: '250.00', amountReal: '1200.00', memberLimit: 999999999, freeDays: 0 },
+        ];
+        for (const plan of plans) {
+          const exists = await planRepo.findOne({ where: { id: plan.id } });
+          if (!exists) {
+            await planRepo.save(plan);
+          } else {
+            await planRepo.update({ id: plan.id }, plan);
+          }
+        }
+      }
+
+      await ensureDefaults();
+      return ds;
     },
   },
   {
