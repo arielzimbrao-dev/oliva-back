@@ -27,7 +27,7 @@ export class AuthService {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
-    const payload = { sub: user.id, email: user.email, churchId: user.churchId };
+    const payload = { sub: user.id, email: user.email, churchId: user.churchId, role: user.role ? { slug: user.role.slug, name: user.role.name } : undefined };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, { expiresIn: '15m' }),
       this.jwtService.signAsync(payload, { expiresIn: '7d' }),
@@ -46,7 +46,7 @@ export class AuthService {
   async refresh(refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken);
-      const accessToken = await this.jwtService.signAsync({ sub: payload.sub, email: payload.email, churchId: payload.churchId }, { expiresIn: '15m' });
+      const accessToken = await this.jwtService.signAsync({ sub: payload.sub, email: payload.email, churchId: payload.churchId, role: payload.role }, { expiresIn: '15m' });
       return { accessToken };
     } catch (e) {
       throw new UnauthorizedException('Invalid refresh token');

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { randomBytes } from 'crypto';
+import { randomBytes, createPublicKey } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AuthController } from './auth.controller';
@@ -36,6 +36,18 @@ import { JwtAuthGuard } from './jwt-auth.guard';
             }
             if (!publicKey && fs.existsSync(pubPath)) {
               publicKey = fs.readFileSync(pubPath, 'utf8').replace(/\r?\n/g, '\n');
+            }
+
+            // If we have a private key but no usable public key, attempt to derive
+            // a PEM-formatted public key from the private key at runtime so that
+            // RS256 signing and verification use matching key material.
+            if (privateKey && !publicKey) {
+              try {
+                const derived = createPublicKey(privateKey).export({ type: 'spki', format: 'pem' });
+                publicKey = typeof derived === 'string' ? derived : derived.toString('utf8');
+              } catch (err) {
+                // ignore derivation errors and fall back to secret
+              }
             }
           } catch (e) {
             // ignore and fallback to secret
