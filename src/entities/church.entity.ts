@@ -1,20 +1,16 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
 } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 import { User } from './user.entity';
 import { Member } from './member.entity';
 import { ChurchSubscription } from './church-subscription.entity';
 
 @Entity('churches')
-export class Church {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class Church extends BaseEntity {
 
   @Column()
   name: string;
@@ -34,11 +30,6 @@ export class Church {
   @Column()
   status: string; // ACTIVE, SUSPENDED
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @Column({ default: 1 })
   memberActive: number; 

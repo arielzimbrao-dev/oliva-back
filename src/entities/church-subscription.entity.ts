@@ -1,21 +1,17 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
   Index,
 } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 import { Church } from './church.entity';
 import { Plan } from './plan.entity';
 
 @Entity('church_subscriptions')
 @Index(['churchId', 'planId'])
-@Index(['churchId', 'startDate'])
-export class ChurchSubscription {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class ChurchSubscription extends BaseEntity {
 
   @Column()
   churchId: string;
@@ -29,11 +25,6 @@ export class ChurchSubscription {
   @Column('varchar', { length: 3 })
   currency: string;
 
-  @CreateDateColumn()
-  startDate: Date;
-
-  @Column({ nullable: true })
-  endDate?: Date; // Cancellation date
 
   @ManyToOne(() => Church, (church) => church.subscriptions)
   @JoinColumn({ name: 'churchId' })

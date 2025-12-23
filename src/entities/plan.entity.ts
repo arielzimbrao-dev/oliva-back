@@ -1,10 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 import { ChurchSubscription } from './church-subscription.entity';
 
 @Entity('plans')
-export class Plan {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class Plan extends BaseEntity {
 
   @Column()
   name: string; // BASIC, PRO, ENTERPRISE
@@ -24,8 +23,6 @@ export class Plan {
   @Column({ default: 99999999 })
   memberLimit: number; 
 
-  @DeleteDateColumn({ nullable: true })
-  deletedAt: Date;
   
   @Column({ default: 0 })
   freeDays: number; // Trial period

@@ -1,24 +1,19 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   OneToMany,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   Index,
-  DeleteDateColumn,
 } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 import { Member } from './member.entity';
 import { Church } from './church.entity';
 import { Role } from './role.entity';
 
 @Entity('users')
 @Index(['churchId'])
-export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class User extends BaseEntity {
 
   @Column()
   churchId: string;
@@ -39,14 +34,6 @@ export class User {
   @Column()
   state: string; // ACTIVE, INACTIVE
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  @DeleteDateColumn()
-  deletedAt: Date;
 
   @Column({ nullable: true })
   confirmCode?: string;

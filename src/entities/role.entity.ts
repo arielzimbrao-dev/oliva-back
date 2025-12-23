@@ -1,11 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 
 @Entity('roles')
-export class Role {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ unique: true, enum: ['ADMIN', 'TREASURY', 'SECRETARY', 'PASTOR'], enumName: 'RoleName', type: 'enum' })
+export class Role extends BaseEntity {
+  @Column({ unique: true, enum: ['ADMIN', 'TREASURY', 'SECRETARY', 'PASTOR', 'MEMBER'], enumName: 'RoleName', type: 'enum' })
   slug: string;
 
   @Column({ type: 'varchar', unique: true })

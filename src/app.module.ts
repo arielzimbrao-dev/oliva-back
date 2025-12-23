@@ -1,7 +1,7 @@
-import { Inject, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ContextInterceptor } from './common/util/context/context-interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { Context, UserContextDto } from './common/util/context/context';
+import { Context } from './common/util/context/context';
 import { databaseProviders } from './database/database.providers';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -22,6 +22,9 @@ import { MemberRepository } from './entities/repository/member.repository';
 import { PlanRepository } from './entities/repository/plan.entity';
 import { RoleRepository } from './entities/repository/role.repository';
 import { UserRepository } from './entities/repository/user.repository';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -57,13 +60,14 @@ import { UserRepository } from './entities/repository/user.repository';
     RoleRepository,
     UserRepository,
 
+    AppService,
     AuthService,
     ChurchService,
     PlansService,
     UserService
 
   ],
-  controllers: [AuthController, ChurchController, PlansController, UserController],
+  controllers: [AppController, AuthController, ChurchController, PlansController, UserController],
   exports: [
     ...databaseProviders,
     Context,

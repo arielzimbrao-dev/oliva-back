@@ -1,21 +1,18 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
   Index,
 } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 import { User } from './user.entity';
 import { Church } from './church.entity';
 
 @Entity('members')
 @Index(['userId'])
 @Index(['churchId'])
-export class Member {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class Member extends BaseEntity {
 
   @Column()
   churchId: string;
@@ -38,8 +35,6 @@ export class Member {
   @Column({ default: false, nullable: true })
   baptismStatus: boolean; // PENDING, COMPLETED
 
-  @CreateDateColumn()
-  createdAt: Date;
 
   @Column({ nullable: true })
   userId?: string;
