@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+
 # Build stage (uses dev deps to compile, then prunes to production)
 FROM node:18-alpine AS build
 WORKDIR /app
@@ -12,6 +13,8 @@ COPY --from=development /app/node_modules ./node_modules
 COPY tsconfig*.json ./
 COPY src/ ./src/
 RUN npm run build
+RUN npm run migration:run || true
+RUN npm run seed || true
 ENV NODE_ENV=production
 RUN npm ci --only=production && npm cache clean --force
 
