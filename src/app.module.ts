@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Inject, Module } from '@nestjs/common';
 import { ContextInterceptor } from './common/util/context/context-interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { Context, UserContextDto } from './common/util/context/context';
@@ -69,4 +69,5 @@ import { UserRepository } from './entities/repository/user.repository';
     Context,
   ],
 })
-export class AppModule {}
+export class AppModule {
+}
