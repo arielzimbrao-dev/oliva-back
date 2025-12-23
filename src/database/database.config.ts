@@ -6,6 +6,8 @@ import { User } from '../entities/user.entity';
 import { Member } from '../entities/member.entity';
 import { Role } from '../entities/role.entity';
 
+require('dotenv').config();
+
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',

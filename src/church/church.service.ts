@@ -64,7 +64,7 @@ export class ChurchService {
         birthDate: profile.birthDate ? new Date(profile.birthDate) : undefined,
         phone: profile.phone,
         status: 'ACTIVE',
-        baptismStatus: profile.baptized ? 'COMPLETED' : 'PENDING',
+        baptismStatus: profile.baptized || false,
         church: savedChurch,
         user: savedUser,
       });

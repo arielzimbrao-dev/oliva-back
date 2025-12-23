@@ -24,16 +24,19 @@ export class Member {
   name: string;
 
   @Column({ nullable: true })
+  email?: string;
+
+  @Column({ nullable: true })
   phone?: string;
 
-  @Column({ type: 'date', nullable: true })
-  birthDate?: Date;
+  @Column({ type: 'date', nullable: false })
+  birthDate: Date;
 
   @Column()
   status: string; // ACTIVE, INACTIVE
 
-  @Column()
-  baptismStatus: string; // PENDING, COMPLETED
+  @Column({ default: false, nullable: true })
+  baptismStatus: boolean; // PENDING, COMPLETED
 
   @CreateDateColumn()
   createdAt: Date;
