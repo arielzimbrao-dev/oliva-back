@@ -45,7 +45,7 @@ export const databaseProviders = [
           { slug: 'ADMIN', name: 'Administrador', description: 'Acesso total' },
           { slug: 'TREASURY', name: 'Tesouraria', description: 'Financeiro' },
           { slug: 'SECRETARY', name: 'Secretária', description: 'Secretaria' },
-          { slug: 'MEMBER', name: 'Membro', description: 'Membro comum' },
+          { slug: 'PASTOR', name: 'Pastor', description: 'Pastor da igreja' },
         ];
         for (const role of roles) {
           const exists = await roleRepo.findOne({ where: { slug: role.slug } });
