@@ -27,7 +27,7 @@ import { AppService } from './app.service';
 import { DepartmentRepository } from './entities/repository/department.repository';
 import { MemberDepartmentRepository } from './entities/repository/member-department.repository';
 import { DepartmentsService } from './modules/departments/departments.service';
-import { DepartmentController } from './modules/departments/departments.controller';
+import { DepartmentsController } from './modules/departments/departments.controller';
 
 @Module({
   imports: [
@@ -80,7 +80,7 @@ import { DepartmentController } from './modules/departments/departments.controll
     ChurchController, 
     PlansController, 
     UserController,
-    DepartmentController,
+    DepartmentsController,
   ],
   exports: [
     ...databaseProviders,

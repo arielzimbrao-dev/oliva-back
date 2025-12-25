@@ -7,7 +7,7 @@ import { DepartmentResponseDto, DepartmentListResponseDto } from './dtos/departm
 
 @Controller('departments')
 @UseGuards(JwtAuthGuard)
-export class DepartmentController {
+export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 
   @Get()

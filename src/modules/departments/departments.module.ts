@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
+import { DepartmentRepository } from '../../entities/repository/department.repository';
 import { DepartmentsController } from './departments.controller';
 import { DepartmentsService } from './departments.service';
-import { DepartmentRepository } from '../../entities/repository/department.repository';
 
 @Module({
   controllers: [DepartmentsController],
