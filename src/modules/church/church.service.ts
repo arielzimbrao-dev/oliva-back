@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { RegisterChurchDto } from '../auth/dtos/register-church.dto';
+import { RegisterChurchRequestDto } from './dtos/register-church-request.dto';
+import { RegisterChurchResponseDto } from '../auth/dtos/register-church-response.dto';
 import { ChurchRepository } from '../../entities/repository/church.repository';
 import { UserRepository } from '../../entities/repository/user.repository';
 import { RoleRepository } from '../../entities/repository/role.repository';
@@ -26,8 +27,8 @@ export class ChurchService {
     private readonly subscriptionRepo: ChurchSubscriptionRepository,
   ) {}
 
-  async registerChurch(dto: RegisterChurchDto): Promise<void> {
-    const { credentials, profile, church: churchDto, plan: planDto } = dto;
+  async registerChurch(dto: RegisterChurchRequestDto): Promise<RegisterChurchResponseDto> {
+    const { credentials, profile, plan: planDto } = dto;
 
     const existing = await this.userRepo.findOne({ where: { email: credentials.email } } as any);
     if (existing) throw new EmailAlreadyInUseError();
@@ -38,14 +39,14 @@ export class ChurchService {
     const adminRole = await this.roleRepo.findBySlug('ADMIN');
     if (!adminRole) throw new AdminRoleNotFoundError();
 
-    const addr = churchDto.address
-      ? [churchDto.address.street, churchDto.address.number, churchDto.address.city, churchDto.address.state, churchDto.address.country, churchDto.address.postalCode]
+    const addr = profile.address
+      ? [profile.address.street, profile.address.number, profile.address.city, profile.address.state, profile.address.country, profile.address.postalCode]
           .filter(Boolean)
           .join(', ')
       : undefined;
 
     const church = await this.churchRepo.create({
-      name: churchDto.name,
+      name: profile.name,
       address: addr,
       email: credentials.email,
       status: 'ACTIVE',
@@ -76,20 +77,27 @@ export class ChurchService {
     } as any);
 
     const now = new Date();
-    const amount = churchDto.preferredCurrency === 'USD' ? (plan as any).amountDolar :
-                  churchDto.preferredCurrency === 'EUR' ? (plan as any).amountEuro :
-                  churchDto.preferredCurrency === 'BRL' ? (plan as any).amountReal :
-                  (plan as any).amountDolar;
+    const amount = profile.preferredCurrency === 'USD' ? (plan as any).amountDolar :
+            profile.preferredCurrency === 'EUR' ? (plan as any).amountEuro :
+            profile.preferredCurrency === 'BRL' ? (plan as any).amountReal :
+            (plan as any).amountDolar;
 
     await this.subscriptionRepo.create({
       church: church as any,
       plan: plan as any,
       amount: amount,
-      currency: churchDto.preferredCurrency,
+      currency: profile.preferredCurrency,
       startDate: now,
       endDate: (plan as any).freeDays && (plan as any).freeDays > 0 ? new Date(now.getTime() + (plan as any).freeDays * 24 * 60 * 60 * 1000) : undefined,
     } as any);
 
-    return;
+    return {
+      id: (church as any).id,
+      name: church.name,
+      email: church.email,
+      status: church.status,
+      createdAt: (church as any).createdAt,
+      updatedAt: (church as any).updatedAt,
+    };
   }
 }

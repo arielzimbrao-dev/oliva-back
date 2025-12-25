@@ -24,6 +24,10 @@ import { RoleRepository } from './entities/repository/role.repository';
 import { UserRepository } from './entities/repository/user.repository';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DepartmentRepository } from './entities/repository/department.repository';
+import { MemberDepartmentRepository } from './entities/repository/member-department.repository';
+import { DepartmentsService } from './modules/departments/departments.service';
+import { DepartmentController } from './modules/departments/departments.controller';
 
 @Module({
   imports: [
@@ -59,15 +63,25 @@ import { AppService } from './app.service';
     PlanRepository,
     RoleRepository,
     UserRepository,
+    DepartmentRepository,
+    MemberDepartmentRepository,
 
     AppService,
     AuthService,
     ChurchService,
     PlansService,
-    UserService
+    UserService,
+    DepartmentsService,
 
   ],
-  controllers: [AppController, AuthController, ChurchController, PlansController, UserController],
+  controllers: [
+    AppController, 
+    AuthController, 
+    ChurchController, 
+    PlansController, 
+    UserController,
+    DepartmentController,
+  ],
   exports: [
     ...databaseProviders,
     Context,

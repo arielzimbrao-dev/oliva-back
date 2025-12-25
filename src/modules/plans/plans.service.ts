@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PlanDto } from './dtos/plan.dto';
+import { PlanResponseDto, PlanListResponseDto } from './dtos/plan-response.dto';
 import { PlanRepository } from 'src/entities/repository/plan.entity';
 
 @Injectable()
@@ -8,17 +8,22 @@ export class PlansService {
     private planRepo: PlanRepository,
   ) {}
 
-  async getPlans(): Promise<PlanDto[]> {
+  async getPlans(): Promise<PlanListResponseDto> {
     const plans = await this.planRepo.findAll();
-    console.log(plans);
-    return plans.map(plan => ({
-      id: plan.id,
-      name: plan.name,
-      description: plan.description,
-      priceDolar: parseFloat(plan.amountDolar),
-      priceEuro: parseFloat(plan.amountEuro),
-      priceReal: parseFloat(plan.amountReal),
-      freeDays: plan.freeDays.toString(),
-    }));
+    return {
+      total: plans.length,
+      data: plans.map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        amountDolar: plan.amountDolar,
+        amountEuro: plan.amountEuro,
+        amountReal: plan.amountReal,
+        memberLimit: plan.memberLimit,
+        freeDays: plan.freeDays,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+      })),
+    };
   }
 }

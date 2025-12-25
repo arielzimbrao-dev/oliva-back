@@ -8,6 +8,7 @@ import { BaseEntity } from '../common/base.entity';
 import { User } from './user.entity';
 import { Member } from './member.entity';
 import { ChurchSubscription } from './church-subscription.entity';
+import { Department } from './department.entity';
 
 @Entity('churches')
 export class Church extends BaseEntity {
@@ -37,8 +38,12 @@ export class Church extends BaseEntity {
   @OneToMany(() => User, (user) => user.church)
   users: User[];
 
+
   @OneToMany(() => Member, (member) => member.church)
   members: Member[];
+
+  @OneToMany(() => Department, (department) => department.church)
+  departments: Department[];
 
   @OneToMany(() => ChurchSubscription, (subscription) => subscription.church)
   subscriptions: ChurchSubscription[];

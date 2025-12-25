@@ -6,6 +6,8 @@ import { Member } from 'src/entities/member.entity';
 import { Plan } from 'src/entities/plan.entity';
 import { Role } from 'src/entities/role.entity';
 import { User } from 'src/entities/user.entity';
+import { Department } from 'src/entities/department.entity';
+import { MemberDepartment } from 'src/entities/member-department.entity';
 
 // Carregar variáveis do arquivo .env
 dotenv.config();
@@ -28,6 +30,8 @@ export const databaseProviders = [
           Plan,
           Role,
           User,
+          Department,
+          MemberDepartment,
         ],
         synchronize: true,
         logging: true,
@@ -105,6 +109,16 @@ export const databaseProviders = [
   {
     provide: 'USER_REPOSITORY',
     useFactory: (dataSource: DataSource) => dataSource.getRepository(User),
+    inject: ['DATA_SOURCE'],
+  },
+  {
+    provide: 'DEPARTMENT_REPOSITORY',
+    useFactory: (dataSource: DataSource) => dataSource.getRepository(Department),
+    inject: ['DATA_SOURCE'],
+  },
+  {
+    provide: 'MEMBER_DEPARTMENT_REPOSITORY',
+    useFactory: (dataSource: DataSource) => dataSource.getRepository(MemberDepartment),
     inject: ['DATA_SOURCE'],
   },
 ];

@@ -4,10 +4,12 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  OneToMany,
 } from 'typeorm';
 import { BaseEntity } from '../common/base.entity';
 import { User } from './user.entity';
 import { Church } from './church.entity';
+import { MemberDepartment } from './member-department.entity';
 
 @Entity('members')
 @Index(['userId'])
@@ -46,4 +48,7 @@ export class Member extends BaseEntity {
   @ManyToOne(() => Church, (church) => church.members, { nullable: false })
   @JoinColumn({ name: 'churchId' })
   church: Church;
+  
+  @OneToMany(() => MemberDepartment, (md) => md.member)
+  memberDepartments: MemberDepartment[];
 }

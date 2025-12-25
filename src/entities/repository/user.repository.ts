@@ -18,6 +18,22 @@ export class UserRepository {
     return this.base.findAll(options);
   }
 
+  async findPaginated({ page = 1, limit = 10, filter = '', churchId }: { page?: number; limit?: number; filter?: string; churchId: string }) {
+    const skip = (page - 1) * limit;
+    const query = this.userRepository.createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.members', 'member')
+      .where('user.deletedAt IS NULL')
+      .andWhere('user.churchId = :churchId', { churchId });
+    if (filter) {
+      query.andWhere('user.email ILIKE :filter OR user.state ILIKE :filter OR member.name ILIKE :filter', { filter: `%${filter}%` });
+    }
+    query.orderBy('user.updatedAt', 'DESC');
+    query.skip(skip).take(limit);
+    const [users, total] = await query.getManyAndCount();
+    return { users, total };
+  }
+
   findOne(options: FindOneOptions<User>) {
     return this.base.findOne(options);
   }

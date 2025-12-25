@@ -19,7 +19,6 @@ export class cryptoUtils {
     hash: string,
   ): Promise<boolean> {
     const passwordDecrypto = this.decryptoPasswordFront(password);
-    console.log(cryptoUtils.hash(passwordDecrypto));
     return bcrypt.compare(passwordDecrypto, hash);
   }
 
