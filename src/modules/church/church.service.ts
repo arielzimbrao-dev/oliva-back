@@ -28,7 +28,7 @@ export class ChurchService {
   ) {}
 
   async registerChurch(dto: RegisterChurchRequestDto): Promise<RegisterChurchResponseDto> {
-    const { credentials, profile, plan: planDto } = dto;
+    const { credentials, profile, church: churchDto, plan: planDto } = dto;
 
     const existing = await this.userRepo.findOne({ where: { email: credentials.email } } as any);
     if (existing) throw new EmailAlreadyInUseError();
@@ -39,24 +39,27 @@ export class ChurchService {
     const adminRole = await this.roleRepo.findBySlug('ADMIN');
     if (!adminRole) throw new AdminRoleNotFoundError();
 
-    const addr = profile.address
-      ? [profile.address.street, profile.address.number, profile.address.city, profile.address.state, profile.address.country, profile.address.postalCode]
+    const addr = churchDto.address
+      ? [churchDto.address.street, churchDto.address.number, churchDto.address.city, churchDto.address.state, churchDto.address.country, churchDto.address.postalCode]
           .filter(Boolean)
           .join(', ')
       : undefined;
 
     const church = await this.churchRepo.create({
-      name: profile.name,
+      name: churchDto.name,
       address: addr,
       email: credentials.email,
       status: 'ACTIVE',
+      foundationDate: churchDto.foundationDate,
+      preferredLanguage: churchDto.preferredLanguage,
+      preferredCurrency: churchDto.preferredCurrency,
     });
 
     if (credentials.password !== credentials.passwordConfirmation) {
       throw new PasswordConfirmationMismatchError();
     }
-    const decrypto = cryptoUtils.decryptoPasswordFront(credentials.password);
-    const pass = await cryptoUtils.preSavePassword(decrypto);
+    
+    const pass = await cryptoUtils.preSavePassword(credentials.password);
 
     const user = await this.userRepo.create({
       email: credentials.email,
@@ -66,27 +69,34 @@ export class ChurchService {
       churchId: (church as any).id,
     });
 
+    // Busca e incrementa nextId da church para idMember
+    const idMember = (church.nextId || 0) + 1;
+    church.nextId = idMember;
+    await this.churchRepo.save(church);
     await this.memberRepo.create({
       name: profile.fullName,
       birthDate: profile.birthDate ? new Date(profile.birthDate) : undefined,
       phone: profile.phone,
       status: 'ACTIVE',
       baptismStatus: profile.baptized || false,
+      gender: profile.gender,
       church: church as any,
       user: user as any,
+      idMember,
+      churchId: (church as any).id,
     } as any);
 
     const now = new Date();
-    const amount = profile.preferredCurrency === 'USD' ? (plan as any).amountDolar :
-            profile.preferredCurrency === 'EUR' ? (plan as any).amountEuro :
-            profile.preferredCurrency === 'BRL' ? (plan as any).amountReal :
-            (plan as any).amountDolar;
+        const amount = churchDto.preferredCurrency === 'USD' ? (plan as any).amountDolar :
+          churchDto.preferredCurrency === 'EUR' ? (plan as any).amountEuro :
+          churchDto.preferredCurrency === 'BRL' ? (plan as any).amountReal :
+          (plan as any).amountDolar;
 
     await this.subscriptionRepo.create({
       church: church as any,
       plan: plan as any,
       amount: amount,
-      currency: profile.preferredCurrency,
+      currency: churchDto.preferredCurrency,
       startDate: now,
       endDate: (plan as any).freeDays && (plan as any).freeDays > 0 ? new Date(now.getTime() + (plan as any).freeDays * 24 * 60 * 60 * 1000) : undefined,
     } as any);

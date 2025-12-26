@@ -15,6 +15,8 @@ import { MemberDepartment } from './member-department.entity';
 @Index(['userId'])
 @Index(['churchId'])
 export class Member extends BaseEntity {
+  @Column()
+  idMember: number;
 
   @Column()
   churchId: string;
@@ -36,7 +38,6 @@ export class Member extends BaseEntity {
 
   @Column({ default: false, nullable: true })
   baptismStatus: boolean; // PENDING, COMPLETED
-
 
   @Column({ nullable: true })
   userId?: string;

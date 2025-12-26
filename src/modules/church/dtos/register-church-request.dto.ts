@@ -27,21 +27,28 @@ class AddressDto {
   postalCode?: string;
 }
 
-class ChurchProfileDto {
-    @IsOptional()
-    @IsString()
-    fullName?: string;
+class ProfileDto {
+  @IsOptional()
+  @IsString()
+  fullName?: string;
 
-    @IsOptional()
-    @IsString()
-    birthDate?: string;
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
 
-    @IsOptional()
-    @IsString()
-    phone?: string;
+  @IsOptional()
+  @IsString()
+  gender?: string;
 
-    @IsOptional()
-    baptized?: boolean;
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  baptized?: boolean;
+}
+
+class ChurchDto {
   @IsNotEmpty()
   @IsString()
   name: string;
@@ -50,6 +57,14 @@ class ChurchProfileDto {
   @ValidateNested()
   @Type(() => AddressDto)
   address?: AddressDto;
+
+  @IsOptional()
+  @IsString()
+  foundationDate?: string;
+
+  @IsOptional()
+  @IsString()
+  preferredLanguage?: string;
 
   @IsOptional()
   @IsString()
@@ -81,8 +96,12 @@ export class RegisterChurchRequestDto {
   credentials: CredentialsDto;
 
   @ValidateNested()
-  @Type(() => ChurchProfileDto)
-  profile: ChurchProfileDto;
+  @Type(() => ProfileDto)
+  profile: ProfileDto;
+
+  @ValidateNested()
+  @Type(() => ChurchDto)
+  church: ChurchDto;
 
   @ValidateNested()
   @Type(() => PlanDto)

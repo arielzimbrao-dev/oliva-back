@@ -19,8 +19,18 @@ export class Church extends BaseEntity {
   @Column({ nullable: true })
   address?: string;
 
+
   @Column({ nullable: true })
   phone?: string;
+
+  @Column({ nullable: true })
+  foundationDate?: string;
+
+  @Column({ nullable: true })
+  preferredLanguage?: string;
+
+  @Column({ nullable: true })
+  preferredCurrency?: string;
 
   @Column({ unique: true })
   email: string;
@@ -38,6 +48,8 @@ export class Church extends BaseEntity {
   @OneToMany(() => User, (user) => user.church)
   users: User[];
 
+  @Column({ default: 0 })
+  nextId: number;
 
   @OneToMany(() => Member, (member) => member.church)
   members: Member[];

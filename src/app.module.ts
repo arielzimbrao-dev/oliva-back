@@ -28,6 +28,9 @@ import { DepartmentRepository } from './entities/repository/department.repositor
 import { MemberDepartmentRepository } from './entities/repository/member-department.repository';
 import { DepartmentsService } from './modules/departments/departments.service';
 import { DepartmentsController } from './modules/departments/departments.controller';
+import { MembersService } from './modules/members/members.service';
+import { MembersController } from './modules/members/members.controller';
+import { MemberFamilyRepository } from './entities/repository/member-family.repository';
 
 @Module({
   imports: [
@@ -65,6 +68,7 @@ import { DepartmentsController } from './modules/departments/departments.control
     UserRepository,
     DepartmentRepository,
     MemberDepartmentRepository,
+    MemberFamilyRepository,
 
     AppService,
     AuthService,
@@ -72,6 +76,7 @@ import { DepartmentsController } from './modules/departments/departments.control
     PlansService,
     UserService,
     DepartmentsService,
+    MembersService,
 
   ],
   controllers: [
@@ -81,6 +86,7 @@ import { DepartmentsController } from './modules/departments/departments.control
     PlansController, 
     UserController,
     DepartmentsController,
+    MembersController,
   ],
   exports: [
     ...databaseProviders,

@@ -4,4 +4,6 @@ export class LoginResponseDto {
   userId: string;
   email: string;
   role: string;
+  memberName?: string;
+  churchName?: string;
 }

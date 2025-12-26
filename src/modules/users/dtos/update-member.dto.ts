@@ -1,5 +1,7 @@
+
 import { IsNotEmpty, IsOptional, IsString, IsDateString, IsBoolean, ValidateNested, IsArray, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
+import { MemberFamilyDto } from './member-family.dto';
 
 class DepartmentLinkDto {
   @IsUUID()
@@ -35,4 +37,9 @@ export class UpdateMemberDto {
   @ValidateNested({ each: true })
   @Type(() => DepartmentLinkDto)
   departments?: DepartmentLinkDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MemberFamilyDto)
+  family?: MemberFamilyDto[];
 }

@@ -1,4 +1,1 @@
-export class RefreshTokenResponseDto {
-  accessToken: string;
-  refreshToken: string;
-}
+// No longer used. Refresh now returns LoginResponseDto.

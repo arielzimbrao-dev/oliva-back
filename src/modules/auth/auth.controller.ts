@@ -3,7 +3,6 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { LoginResponseDto } from './dtos/login-response.dto';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
-import { RefreshTokenResponseDto } from './dtos/refresh-token-response.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -15,7 +14,7 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Body() body: RefreshTokenDto): Promise<RefreshTokenResponseDto> {
+  async refresh(@Body() body: RefreshTokenDto): Promise<LoginResponseDto> {
     return this.authService.refresh(body.refreshToken);
   }
 }

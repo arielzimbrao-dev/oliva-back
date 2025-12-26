@@ -8,6 +8,7 @@ import { Role } from 'src/entities/role.entity';
 import { User } from 'src/entities/user.entity';
 import { Department } from 'src/entities/department.entity';
 import { MemberDepartment } from 'src/entities/member-department.entity';
+import { MemberFamily } from 'src/entities/member-family.entity';
 
 // Carregar variáveis do arquivo .env
 dotenv.config();
@@ -119,6 +120,11 @@ export const databaseProviders = [
   {
     provide: 'MEMBER_DEPARTMENT_REPOSITORY',
     useFactory: (dataSource: DataSource) => dataSource.getRepository(MemberDepartment),
+    inject: ['DATA_SOURCE'],
+  },
+  {
+    provide: 'MEMBER_FAMILY_REPOSITORY',
+    useFactory: (dataSource: DataSource) => dataSource.getRepository(MemberFamily),
     inject: ['DATA_SOURCE'],
   },
 ];
