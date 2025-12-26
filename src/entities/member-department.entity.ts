@@ -1,11 +1,10 @@
-import { Entity, Column, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Member } from './member.entity';
 import { Department } from './department.entity';
+import { BaseEntity } from 'src/common/base.entity';
 
 @Entity('member_departments')
-export class MemberDepartment {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class MemberDepartment extends BaseEntity {
 
   @Column()
   memberId: string;

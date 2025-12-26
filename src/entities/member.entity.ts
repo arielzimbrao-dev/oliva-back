@@ -27,8 +27,12 @@ export class Member extends BaseEntity {
   @Column({ nullable: true })
   email?: string;
 
+
   @Column({ nullable: true })
   phone?: string;
+
+  @Column({ nullable: true })
+  gender?: string;
 
   @Column({ type: 'date', nullable: false })
   birthDate: Date;

@@ -69,13 +69,15 @@ export class MembersService {
       ...data,
       birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
       idMember,
+      gender: data.sex,
+      status: 'ACTIVE',
     });
     // Associa departamentos se enviados
-    if (data.departments && data.departments.length) {
-      for (const dep of data.departments) {
+    if (data.departmentIds && data.departmentIds.length) {
+      for (const dep of data.departmentIds) {
         await this.memberDepartmentRepository.create({
           memberId: member.id,
-          departmentId: dep.departmentId,
+          departmentId: dep.id,
           isLeader: dep.isLeader,
         });
       }
@@ -96,26 +98,49 @@ export class MembersService {
   }
 
   async update(id: string, data: UpdateMemberDto): Promise<MemberResponseDto> {
-    await this.findOne(id); // Garante existência
-    let updateData: any = { ...data };
+    const older = await this.findOne(id); // Garante existência
+
+    if (!older) {
+        throw new NotFoundException('Member not found');
+    }
+    let updateData: any = {};
     if (data.birthDate) {
       updateData.birthDate = new Date(data.birthDate);
     }
+    if (data.sex) {
+      updateData.gender = data.sex;
+    }
+
+    if (data.email) updateData.email = data.email;
+    if (data.name) updateData.name = data.name;
+    if (data.phone) updateData.phone = data.phone;
+    if (data.baptismStatus !== undefined) updateData.baptismStatus = data.baptismStatus;
+
     const updated = await this.memberRepository.update(id, updateData);
     // Atualiza departamentos se enviados
-    if (data.departments) {
-      // Remove antigos
+    if (data.departmentIds) {
+      // Remove apenas os vínculos que não estão mais presentes
       const oldLinks = await this.memberDepartmentRepository.findAll({ where: { memberId: id } });
+      const newIds = data.departmentIds.map(dep => dep.id);
       for (const link of oldLinks) {
-        await this.memberDepartmentRepository.softDelete(link.id);
+        if (!newIds.includes(link.departmentId)) {
+          await this.memberDepartmentRepository.softDelete(link.id);
+        }
       }
-      // Cria novos
-      for (const dep of data.departments) {
-        await this.memberDepartmentRepository.create({
-          memberId: id,
-          departmentId: dep.departmentId,
-          isLeader: dep.isLeader,
-        });
+      // Cria novos vínculos para departamentos que não existem ainda
+      for (const dep of data.departmentIds) {
+        const existingLink = oldLinks.find(link => link.departmentId === dep.id);
+        if (!existingLink) {
+          await this.memberDepartmentRepository.create({
+            memberId: id,
+            departmentId: dep.id,
+            isLeader: dep.isLeader,
+          });
+        } else if (existingLink.isLeader !== dep.isLeader) {
+          await this.memberDepartmentRepository.update(existingLink.id, {
+            isLeader: dep.isLeader,
+          });
+        }
       }
     }
     // Atualiza relações familiares se enviados
@@ -147,6 +172,7 @@ export class MembersService {
     const departments: MemberDepartmentDto[] = (member.memberDepartments || []).map(md => ({
       id: md.department?.id,
       name: md.department?.name,
+      isLeader: md.isLeader,
     }));
     const family: MemberFamilyResponseDto[] = (families || []).map(fam => ({
       id: fam.relatedMember?.id,
@@ -160,6 +186,14 @@ export class MembersService {
       name: member.name,
       email: member.email,
       phone: member.phone,
+      gender: member.gender,
+      birthDate: member.birthDate
+        ? (member.birthDate instanceof Date
+            ? member.birthDate.toISOString().split('T')[0]
+            : typeof member.birthDate === 'string'
+              ? member.birthDate
+              : undefined)
+        : undefined,
       departments,
       baptismStatus: !!member.baptismStatus,
       createdAt: member.createdAt,

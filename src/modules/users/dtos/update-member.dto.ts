@@ -3,9 +3,10 @@ import { IsNotEmpty, IsOptional, IsString, IsDateString, IsBoolean, ValidateNest
 import { Type } from 'class-transformer';
 import { MemberFamilyDto } from './member-family.dto';
 
-class DepartmentLinkDto {
+
+class DepartmentIdDto {
   @IsUUID()
-  departmentId: string;
+  id: string;
 
   @IsBoolean()
   isLeader: boolean;
@@ -29,14 +30,19 @@ export class UpdateMemberDto {
   birthDate?: string;
 
   @IsOptional()
+  @IsString()
+  sex?: string;
+
+  @IsOptional()
   @IsBoolean()
   baptismStatus?: boolean;
 
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => DepartmentLinkDto)
-  departments?: DepartmentLinkDto[];
+  @Type(() => DepartmentIdDto)
+  departmentIds?: DepartmentIdDto[];
+  @IsOptional()
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

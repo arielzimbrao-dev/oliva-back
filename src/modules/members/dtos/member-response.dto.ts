@@ -2,6 +2,7 @@
 export class MemberDepartmentDto {
   id: string;
   name: string;
+  isLeader: boolean;
 }
 
 export class MemberFamilyResponseDto {
@@ -17,6 +18,8 @@ export class MemberResponseDto {
   name: string;
   email?: string;
   phone?: string;
+  gender?: string;
+  birthDate?: string;
   departments: MemberDepartmentDto[];
   baptismStatus: boolean;
   createdAt: Date;

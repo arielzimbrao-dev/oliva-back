@@ -33,6 +33,7 @@ export const databaseProviders = [
           User,
           Department,
           MemberDepartment,
+          MemberFamily,
         ],
         synchronize: true,
         logging: true,
@@ -56,8 +57,6 @@ export const databaseProviders = [
           const exists = await roleRepo.findOne({ where: { slug: role.slug } });
           if (!exists) {
             await roleRepo.save(role);
-          } else {
-            await roleRepo.update({ slug: role.slug }, role);
           }
         }
 
@@ -72,8 +71,6 @@ export const databaseProviders = [
           const exists = await planRepo.findOne({ where: { id: plan.id } });
           if (!exists) {
             await planRepo.save(plan);
-          } else {
-            await planRepo.update({ id: plan.id }, plan);
           }
         }
       }
