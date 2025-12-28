@@ -1,3 +1,4 @@
+import { IsNull } from 'typeorm';
 import { Inject, Injectable } from "@nestjs/common";
 import { Repository, FindOneOptions, FindManyOptions } from "typeorm";
 import { Member } from "../member.entity";
@@ -5,6 +6,9 @@ import { BaseRepository } from "../../common/repository/base.repository";
 
 @Injectable()
 export class MemberRepository {
+    async findOneByIdAndChurch(id: string, churchId: string) {
+      return this.memberRepository.findOne({ where: { id, churchId, deletedAt: IsNull() } });
+    }
   private base: BaseRepository<Member>;
 
   constructor(

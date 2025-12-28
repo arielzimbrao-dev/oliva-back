@@ -26,8 +26,8 @@ export class MembersController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<MemberResponseDto> {
-    return this.membersService.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req): Promise<MemberResponseDto> {
+    return this.membersService.findOne(id, req.user.churchId);
   }
 
   @Post()
@@ -36,12 +36,12 @@ export class MembersController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() body: UpdateMemberDto): Promise<MemberResponseDto> {
-    return this.membersService.update(id, body);
+  async update(@Param('id') id: string, @Body() body: UpdateMemberDto, @Request() req): Promise<MemberResponseDto> {
+    return this.membersService.update(id, { ...body, churchId: req.user.churchId });
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.membersService.remove(id);
+  async remove(@Param('id') id: string, @Request() req): Promise<void> {
+    return this.membersService.remove(id, req.user.churchId);
   }
 }

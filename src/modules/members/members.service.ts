@@ -43,9 +43,9 @@ export class MembersService {
     };
   }
 
-  async findOne(id: string): Promise<MemberResponseDto> {
+  async findOne(id: string, churchId: string): Promise<MemberResponseDto> {
     const member = await this.memberRepository.findOne({
-      where: { id, deletedAt: IsNull() },
+      where: { id, churchId, deletedAt: IsNull() },
       relations: ['memberDepartments', 'memberDepartments.department'],
     });
     if (!member) throw new NotFoundException('Member not found');
@@ -94,15 +94,11 @@ export class MembersService {
       }
     }
     // Busca membro com departamentos
-    return this.findOne(member.id);
+    return this.findOne(member.id, data.churchId);
   }
 
-  async update(id: string, data: UpdateMemberDto): Promise<MemberResponseDto> {
-    const older = await this.findOne(id); // Garante existência
-
-    if (!older) {
-        throw new NotFoundException('Member not found');
-    }
+  async update(id: string, data: UpdateMemberDto & { churchId: string }): Promise<MemberResponseDto> {
+    await this.findOne(id, data.churchId); // Garante existência
     let updateData: any = {};
     if (data.birthDate) {
       updateData.birthDate = new Date(data.birthDate);
@@ -110,12 +106,10 @@ export class MembersService {
     if (data.sex) {
       updateData.gender = data.sex;
     }
-
     if (data.email) updateData.email = data.email;
     if (data.name) updateData.name = data.name;
     if (data.phone) updateData.phone = data.phone;
     if (data.baptismStatus !== undefined) updateData.baptismStatus = data.baptismStatus;
-
     const updated = await this.memberRepository.update(id, updateData);
     // Atualiza departamentos se enviados
     if (data.departmentIds) {
@@ -160,11 +154,11 @@ export class MembersService {
         });
       }
     }
-    return this.findOne(id);
+    return this.findOne(id, data.churchId);
   }
 
-  async remove(id: string): Promise<void> {
-    await this.findOne(id);
+  async remove(id: string, churchId: string): Promise<void> {
+    await this.findOne(id, churchId);
     await this.memberRepository.softDelete(id);
   }
 
@@ -173,6 +167,7 @@ export class MembersService {
       id: md.department?.id,
       name: md.department?.name,
       isLeader: md.isLeader,
+        color: md.department?.color,
     }));
     const family: MemberFamilyResponseDto[] = (families || []).map(fam => ({
       id: fam.relatedMember?.id,

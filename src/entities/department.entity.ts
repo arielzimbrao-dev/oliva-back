@@ -11,8 +11,12 @@ export class Department extends BaseEntity {
   @Column({ nullable: true })
   description?: string;
 
+
   @Column()
   churchId: string;
+
+  @Column({ nullable: true })
+  color?: string;
 
   @ManyToOne(() => Church, (church) => church.departments, { nullable: false })
   @JoinColumn({ name: 'churchId' })

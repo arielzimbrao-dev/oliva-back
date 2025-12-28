@@ -3,6 +3,7 @@ export class DepartmentResponseDto {
   name: string;
   description?: string;
   churchId: string;
+  color?: string;
   totalMember: number;
   createdAt: Date;
   updatedAt: Date;

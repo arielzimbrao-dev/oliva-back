@@ -3,6 +3,7 @@ export class MemberDepartmentDto {
   id: string;
   name: string;
   isLeader: boolean;
+  color?: string;
 }
 
 export class MemberFamilyResponseDto {

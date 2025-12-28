@@ -1,3 +1,4 @@
+  
 import { Inject, Injectable } from '@nestjs/common';
 import { Repository, FindOneOptions, FindManyOptions } from 'typeorm';
 import { Department } from '../department.entity';
@@ -16,6 +17,11 @@ export class DepartmentRepository {
 
   findAll(options?: FindManyOptions<Department>) {
     return this.base.findAll(options);
+  }
+
+  async findOneByIdAndChurch(id: string, churchId: string) {
+    // Use IsNull() for deletedAt to match TypeORM's expected type
+    return this.departmentRepository.findOne({ where: { id, churchId, deletedAt: require('typeorm').IsNull() } });
   }
 
   async findPaginated({ page = 1, limit = 10, filter = '', churchId }: { page?: number; limit?: number; filter?: string; churchId: string }) {

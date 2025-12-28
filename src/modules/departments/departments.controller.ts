@@ -26,8 +26,8 @@ export class DepartmentsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<DepartmentResponseDto> {
-    return this.departmentsService.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req): Promise<DepartmentResponseDto> {
+    return this.departmentsService.findOne(id, req.user.churchId);
   }
 
   @Post()
@@ -36,12 +36,12 @@ export class DepartmentsController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() body: UpdateDepartmentDto): Promise<DepartmentResponseDto> {
-    return this.departmentsService.update(id, body);
+  async update(@Param('id') id: string, @Body() body: UpdateDepartmentDto, @Request() req): Promise<DepartmentResponseDto> {
+    return this.departmentsService.update(id, { ...body, churchId: req.user.churchId });
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.departmentsService.remove(id);
+  async remove(@Param('id') id: string, @Request() req): Promise<void> {
+    return this.departmentsService.remove(id, req.user.churchId);
   }
 }

@@ -31,6 +31,9 @@ import { DepartmentsController } from './modules/departments/departments.control
 import { MembersService } from './modules/members/members.service';
 import { MembersController } from './modules/members/members.controller';
 import { MemberFamilyRepository } from './entities/repository/member-family.repository';
+import { FinancialTransactionRepository } from './entities/repository/financial-transaction.repository';
+import { FinancialTransactionService } from './modules/financial/financial-transaction.service';
+import { FinancialTransactionController } from './modules/financial/financial-transaction.controller';
 
 @Module({
   imports: [
@@ -69,6 +72,7 @@ import { MemberFamilyRepository } from './entities/repository/member-family.repo
     DepartmentRepository,
     MemberDepartmentRepository,
     MemberFamilyRepository,
+    FinancialTransactionRepository,
 
     AppService,
     AuthService,
@@ -77,7 +81,7 @@ import { MemberFamilyRepository } from './entities/repository/member-family.repo
     UserService,
     DepartmentsService,
     MembersService,
-
+    FinancialTransactionService,
   ],
   controllers: [
     AppController, 
@@ -87,6 +91,7 @@ import { MemberFamilyRepository } from './entities/repository/member-family.repo
     UserController,
     DepartmentsController,
     MembersController,
+    FinancialTransactionController,
   ],
   exports: [
     ...databaseProviders,

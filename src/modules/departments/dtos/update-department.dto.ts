@@ -8,4 +8,8 @@ export class UpdateDepartmentDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
 }
