@@ -45,4 +45,7 @@ export class MemberRepository {
   softDelete(id: string) {
     return this.base.softDelete(id);
   }
+  async countByChurchAndStatus(churchId: string, status: string): Promise<number> {
+    return this.memberRepository.count({ where: { churchId, status } });
+  }
 }

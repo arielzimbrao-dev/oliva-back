@@ -1,3 +1,5 @@
+import { PaymentController } from './payment/payment.controller';
+import { PaymentService } from './payment/payment.service';
 import { Module } from '@nestjs/common';
 import { ContextInterceptor } from './common/util/context/context-interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
@@ -34,6 +36,8 @@ import { MemberFamilyRepository } from './entities/repository/member-family.repo
 import { FinancialTransactionRepository } from './entities/repository/financial-transaction.repository';
 import { FinancialTransactionService } from './modules/financial/financial-transaction.service';
 import { FinancialTransactionController } from './modules/financial/financial-transaction.controller';
+import { NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { json } from 'body-parser';
 
 @Module({
   imports: [
@@ -82,6 +86,7 @@ import { FinancialTransactionController } from './modules/financial/financial-tr
     DepartmentsService,
     MembersService,
     FinancialTransactionService,
+    PaymentService
   ],
   controllers: [
     AppController, 
@@ -92,11 +97,25 @@ import { FinancialTransactionController } from './modules/financial/financial-tr
     DepartmentsController,
     MembersController,
     FinancialTransactionController,
+    PaymentController
   ],
   exports: [
     ...databaseProviders,
     Context,
   ],
 })
-export class AppModule {
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(
+        json({
+          verify: (req: any, res, buf) => {
+            if (req.originalUrl.startsWith('/payment/webhook')) {
+              req.rawBody = buf;
+            }
+          },
+        }),
+      )
+      .forRoutes(PaymentController);
+  }
 }

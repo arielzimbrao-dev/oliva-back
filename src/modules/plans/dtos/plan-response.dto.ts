@@ -1,3 +1,4 @@
+
 export class PlanResponseDto {
   id: string;
   name: string;
@@ -7,6 +8,7 @@ export class PlanResponseDto {
   amountReal: string;
   memberLimit: number;
   freeDays: number;
+  linkPayment?: string;
   createdAt: Date;
   updatedAt: Date;
 }

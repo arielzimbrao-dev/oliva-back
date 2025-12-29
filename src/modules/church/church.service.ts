@@ -1,7 +1,9 @@
+import { UpdateChurchDto } from './dtos/update-church.dto';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { RegisterChurchRequestDto } from './dtos/register-church-request.dto';
 import { RegisterChurchResponseDto } from '../auth/dtos/register-church-response.dto';
+import { ChurchInfoResponseDto } from './dtos/church-info-response.dto';
 import { ChurchRepository } from '../../entities/repository/church.repository';
 import { UserRepository } from '../../entities/repository/user.repository';
 import { RoleRepository } from '../../entities/repository/role.repository';
@@ -25,7 +27,44 @@ export class ChurchService {
     private readonly memberRepo: MemberRepository,
     private readonly planRepo: PlanRepository,
     private readonly subscriptionRepo: ChurchSubscriptionRepository,
-  ) {}
+  ) { }
+
+  async getChurchInfo(churchId: string): Promise<ChurchInfoResponseDto> {
+    // Busca dados da igreja
+    const church = await this.churchRepo.findOneById(churchId);
+    if (!church) throw new Error('Igreja não encontrada');
+
+    // Busca o plano selecionado (última subscription ativa)
+    let planName: string | undefined = undefined;
+    let memberLimit: number | undefined = undefined;
+    let planId: string | undefined = undefined;
+    // Busca a subscription mais recente
+    const subscriptions = church.subscriptions || [];
+    let lastSubscription = subscriptions.length > 0 ? subscriptions[subscriptions.length - 1] : undefined;
+    if (!lastSubscription && church.currentSubscriptionPlan) lastSubscription = church.currentSubscriptionPlan;
+    if (lastSubscription && lastSubscription.planId) {
+      planId = lastSubscription.planId;
+    }
+    if (planId) {
+      const plan = await this.planRepo.findOneById(planId);
+      if (plan) {
+        planName = plan.name;
+        memberLimit = plan.memberLimit;
+      }
+    }
+
+    // Busca total de membros cadastrados (ativos)
+    const totalMembers = await this.memberRepo.countByChurchAndStatus(churchId, 'ACTIVE');
+
+    return {
+      name: church.name,
+      language: church.preferredLanguage ?? '',
+      currency: church.preferredCurrency ?? '',
+      plan: planName,
+      totalMembers,
+      memberLimit,
+    };
+  }
 
   async registerChurch(dto: RegisterChurchRequestDto): Promise<RegisterChurchResponseDto> {
     const { credentials, profile, church: churchDto, plan: planDto } = dto;
@@ -41,8 +80,8 @@ export class ChurchService {
 
     const addr = churchDto.address
       ? [churchDto.address.street, churchDto.address.number, churchDto.address.city, churchDto.address.state, churchDto.address.country, churchDto.address.postalCode]
-          .filter(Boolean)
-          .join(', ')
+        .filter(Boolean)
+        .join(', ')
       : undefined;
 
     const church = await this.churchRepo.create({
@@ -58,7 +97,7 @@ export class ChurchService {
     if (credentials.password !== credentials.passwordConfirmation) {
       throw new PasswordConfirmationMismatchError();
     }
-    
+
     const pass = await cryptoUtils.preSavePassword(credentials.password);
 
     const user = await this.userRepo.create({
@@ -87,9 +126,9 @@ export class ChurchService {
     } as any);
 
     const now = new Date();
-        const amount = churchDto.preferredCurrency === 'USD' ? (plan as any).amountDolar :
-          churchDto.preferredCurrency === 'EUR' ? (plan as any).amountEuro :
-          churchDto.preferredCurrency === 'BRL' ? (plan as any).amountReal :
+    const amount = churchDto.preferredCurrency === 'USD' ? (plan as any).amountDolar :
+      churchDto.preferredCurrency === 'EUR' ? (plan as any).amountEuro :
+        churchDto.preferredCurrency === 'BRL' ? (plan as any).amountReal :
           (plan as any).amountDolar;
 
     await this.subscriptionRepo.create({
@@ -110,4 +149,14 @@ export class ChurchService {
       updatedAt: (church as any).updatedAt,
     };
   }
+
+    async updateChurch(churchId: string, dto: UpdateChurchDto): Promise<ChurchInfoResponseDto> {
+      const church = await this.churchRepo.findOneById(churchId);
+      if (!church) throw new Error('Igreja não encontrada');
+      if (dto.name !== undefined) church.name = dto.name;
+      if (dto.preferredLanguage !== undefined) church.preferredLanguage = dto.preferredLanguage;
+      if (dto.preferredCurrency !== undefined) church.preferredCurrency = dto.preferredCurrency;
+      await this.churchRepo.save(church);
+      return this.getChurchInfo(churchId);
+    }
 }

@@ -21,6 +21,7 @@ export class PlansService {
         amountReal: plan.amountReal,
         memberLimit: plan.memberLimit,
         freeDays: plan.freeDays,
+        linkPayment: plan.linkPayment,
         createdAt: plan.createdAt,
         updatedAt: plan.updatedAt,
       })),

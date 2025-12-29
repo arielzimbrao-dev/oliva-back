@@ -24,8 +24,12 @@ export class Plan extends BaseEntity {
   memberLimit: number; 
 
   
+
   @Column({ default: 0 })
   freeDays: number; // Trial period
+
+  @Column({ nullable: true })
+  linkPayment?: string;
 
   @OneToMany(() => ChurchSubscription, (subscription) => subscription.plan)
   subscriptions: ChurchSubscription[];
