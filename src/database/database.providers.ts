@@ -10,6 +10,7 @@ import { Department } from 'src/entities/department.entity';
 import { MemberDepartment } from 'src/entities/member-department.entity';
 import { MemberFamily } from 'src/entities/member-family.entity';
 import { FinancialTransaction } from 'src/entities/financial-transaction.entity';
+import { PaymentSession } from 'src/entities/payment-session.entity';
 
 // Carregar variáveis do arquivo .env
 dotenv.config();
@@ -36,6 +37,7 @@ export const databaseProviders = [
           MemberDepartment,
           MemberFamily,
           FinancialTransaction,
+          PaymentSession,
         ],
         synchronize: true,
         logging: true,
@@ -188,6 +190,11 @@ export const databaseProviders = [
   {
     provide: 'FINANCIAL_TRANSACTION_REPOSITORY',
     useFactory: (dataSource: DataSource) => dataSource.getRepository(FinancialTransaction),
+    inject: ['DATA_SOURCE'],
+  },
+  {
+    provide: 'PAYMENT_SESSION_REPOSITORY',
+    useFactory: (dataSource: DataSource) => dataSource.getRepository(PaymentSession),
     inject: ['DATA_SOURCE'],
   },
 ];

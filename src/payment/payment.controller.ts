@@ -5,14 +5,23 @@ import {
   HttpCode,
   Logger,
   Inject,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentService } from './payment.service';
 import type { RequestWithRawBody } from './request-with-raw-body.interface';
+import { Body, Res } from '@nestjs/common';
+// import type { Response } from 'express';
+import type { Response } from 'express';
+import { PlansService } from '../modules/plans/plans.service';
+
 import Stripe from 'stripe';
+import { JwtAuthGuard } from 'src/modules/auth/jwt/jwt.auth.guard';
 // Ajuste o path conforme sua estrutura real
 
 const processedEvents = new Set<string>();
+
+
 
 @Controller('payment')
 export class PaymentController {
@@ -22,10 +31,23 @@ export class PaymentController {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly configService: ConfigService,
+    private readonly plansService: PlansService,
   ) {
     this.stripe = new Stripe(configService.get<string>('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2024-06-20',
     });
+  }
+
+  @Post('create-session')
+  @UseGuards(JwtAuthGuard)
+  async createStripeSession(@Body('planId') planId: string, @Res() res: Response, @Req() req): Promise<Response> {
+    try {
+      const session = await this.paymentService.createStripeSession(planId, req.user.churchId);
+      return res.status(200).json({ clientSecret: session.client_secret });
+    } catch (error) {
+      this.logger.error('Erro ao criar sessão do Stripe', error);
+      return res.status(400).json({ message: 'Erro ao criar sessão do Stripe', error: error.message });
+    }
   }
 
   @Post()

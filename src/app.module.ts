@@ -38,6 +38,8 @@ import { FinancialTransactionService } from './modules/financial/financial-trans
 import { FinancialTransactionController } from './modules/financial/financial-transaction.controller';
 import { NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { json } from 'body-parser';
+import { PaymentSession } from './entities/payment-session.entity';
+import { PaymentSessionRepository } from './entities/repository/payment-session.repository';
 
 @Module({
   imports: [
@@ -77,6 +79,7 @@ import { json } from 'body-parser';
     MemberDepartmentRepository,
     MemberFamilyRepository,
     FinancialTransactionRepository,
+    PaymentSessionRepository,
 
     AppService,
     AuthService,

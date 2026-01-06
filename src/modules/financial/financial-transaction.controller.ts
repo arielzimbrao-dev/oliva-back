@@ -7,9 +7,10 @@ import { UpdateFinancialTransactionDto } from './dtos/update-financial-transacti
 import { FinancialTransactionResponseDto, FinancialTransactionListResponseDto } from './dtos/financial-transaction-response.dto';
 import { ChurchRepository } from 'src/entities/repository/church.repository';
 import { Church } from 'src/entities/church.entity';
+import { JwtAuthGuard } from '../auth/jwt/jwt.auth.guard';
 
 @Controller('financial-transactions')
-@UseGuards() // Adicione o guard de autenticação se necessário
+@UseGuards(JwtAuthGuard)
 export class FinancialTransactionController {
   constructor(private readonly service: FinancialTransactionService, private readonly churchRepository: ChurchRepository) {}
 

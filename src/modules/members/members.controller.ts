@@ -4,6 +4,7 @@ import { CreateMemberDto } from '../users/dtos/create-member.dto';
 import { UpdateMemberDto } from '../users/dtos/update-member.dto';
 import { MemberResponseDto, MemberListResponseDto } from './dtos/member-response.dto';
 import { MembersService } from './members.service';
+import { IsPublic } from '../auth/jwt/is-public.decoretor';
 
 @Controller('members')
 @UseGuards(JwtAuthGuard)
@@ -38,6 +39,16 @@ export class MembersController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() body: UpdateMemberDto, @Request() req): Promise<MemberResponseDto> {
     return this.membersService.update(id, { ...body, churchId: req.user.churchId });
+  }
+
+  @Post('self')
+  @IsPublic()
+  async createSelf(
+    @Body() body: CreateMemberDto,
+    @Query('churchId') churchId: string
+  ): Promise<MemberResponseDto> {
+    // Não associar a departamentos
+    return this.membersService.create({ ...body, churchId });
   }
 
   @Delete(':id')
