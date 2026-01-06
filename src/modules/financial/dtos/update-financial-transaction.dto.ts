@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsEnum, IsDateString, IsNumber } from 'class-validator';
-import { FinancialTransactionType } from '../../../entities/financial-transaction.entity';
+import { FinancialTransactionType, RecurrenceType } from '../../../entities/financial-transaction.entity';
 
 export class UpdateFinancialTransactionDto {
   @IsOptional()
@@ -21,4 +21,8 @@ export class UpdateFinancialTransactionDto {
   @IsOptional()
   @IsNumber()
   amount?: number;
+
+  @IsOptional()
+  @IsEnum(RecurrenceType)
+  recurrenceType?: RecurrenceType;
 }

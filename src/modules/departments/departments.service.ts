@@ -54,6 +54,12 @@ export class DepartmentsService {
       totalMember: dep.totalMember ?? (dep.memberDepartments ? dep.memberDepartments.length : 0),
       createdAt: dep.createdAt,
       updatedAt: dep.updatedAt,
+      members: Array.isArray(dep.memberDepartments)
+        ? dep.memberDepartments.map(md => ({
+            name: md.member?.name ?? '',
+            isLeader: !!md.isLeader
+          }))
+        : [],
     };
   }
 }

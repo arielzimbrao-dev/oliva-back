@@ -40,14 +40,31 @@ export class FinancialTransactionService {
     const { data, total } = await this.repo.findPaginated({ page, limit, where });
 
     // Usa a query customizada do repositório para o resumo
-    const resume = await this.repo.getResume({ startDate, endDate, type, category });
+    const resumeRaw = await this.repo.getResume({ startDate, endDate, type, category });
+
+    // Preencher todos os campos do resume, retornando 0 se não houver dados
+    const resume = {
+      incomeTotal: {
+        total: resumeRaw?.incomeTotal?.total ?? 0,
+        efective: resumeRaw?.incomeTotal?.efective ?? 0,
+      },
+      expenseTotal: {
+        total: resumeRaw?.expenseTotal?.total ?? 0,
+        efective: resumeRaw?.expenseTotal?.efective ?? 0,
+      },
+      balance: {
+        total: resumeRaw?.balance?.total ?? 0,
+        efective: resumeRaw?.balance?.efective ?? 0,
+      },
+      currentBalance: resumeRaw?.currentBalance ?? 0,
+    };
 
     return {
       total,
       page,
       limit,
       resume,
-      data: data.map(this.toResponseDto),
+      data: data.map((item: FinancialTransaction) => this.toResponseDto(item)),
     };
   }
 
@@ -60,7 +77,15 @@ export class FinancialTransactionService {
   async update(id: string, dto: UpdateFinancialTransactionDto): Promise<FinancialTransactionResponseDto> {
     const entity = await this.repo.findOne({ where: { id, deletedAt: undefined } });
     if (!entity) throw new NotFoundException('Transaction not found');
-    Object.assign(entity, dto);
+    // Corrigir recurrenceType inválido
+    const validRecurrenceTypes = [
+      'ONE_TIME', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'
+    ];
+    let recurrenceType = dto.recurrenceType as any;
+    if (!recurrenceType || !validRecurrenceTypes.includes(recurrenceType)) {
+      recurrenceType = 'ONE_TIME';
+    }
+    Object.assign(entity, { ...dto, recurrenceType });
     entity.updatedAt = new Date();
     const saved = await this.repo.save(entity);
     return this.toResponseDto(saved);
@@ -96,6 +121,13 @@ export class FinancialTransactionService {
     }
 
   private toResponseDto(entity: FinancialTransaction): FinancialTransactionResponseDto {
+    const validRecurrenceTypes = [
+      'ONE_TIME', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'
+    ];
+    let recurrenceType = entity.recurrenceType as any;
+    if (!recurrenceType || !validRecurrenceTypes.includes(recurrenceType)) {
+      recurrenceType = 'ONE_TIME';
+    }
     return {
       id: entity.id,
       date: entity.date,
@@ -103,6 +135,9 @@ export class FinancialTransactionService {
       category: entity.category,
       type: entity.type,
       amount: Number(entity.amount),
+      isPaid: entity.isPaid ?? false,
+      recurrenceType,
+      isActive: entity.isActive ?? true,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };

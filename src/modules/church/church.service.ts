@@ -29,6 +29,21 @@ export class ChurchService {
     private readonly subscriptionRepo: ChurchSubscriptionRepository,
   ) { }
 
+  async getChurchPublicInfo(churchId: string): Promise<{ name: string; canAddMembers: boolean }> {
+    const church = await this.churchRepo.findOneById(churchId);
+    if (!church) throw new Error('Igreja não encontrada');
+    let memberLimit = 99999999;
+    if (church.currentSubscriptionPlan && church.currentSubscriptionPlan.plan) {
+      memberLimit = church.currentSubscriptionPlan.plan.memberLimit ?? 99999999;
+    }
+    // Buscar total de membros ativos
+    const totalMembers = await this.memberRepo.countByChurchAndStatus(churchId, 'ACTIVE');
+    return {
+      name: church.name,
+      canAddMembers: totalMembers < memberLimit,
+    };
+  }
+
   async getChurchInfo(churchId: string): Promise<ChurchInfoResponseDto> {
     // Busca dados da igreja
     const church = await this.churchRepo.findOneById(churchId);

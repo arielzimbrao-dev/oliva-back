@@ -76,27 +76,36 @@ export class FinancialTransactionRepository {
     // Income/Expense total no período considerando filtro type
     let incomeTotal = 0;
     let expenseTotal = 0;
+    let incomeEfective = 0;
+    let expenseEfective = 0;
     if (type === FinancialTransactionType.INCOME) {
       incomeTotal = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.INCOME }) || 0;
+      incomeEfective = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.INCOME, isPaid: true }) || 0;
       expenseTotal = 0;
+      expenseEfective = 0;
     } else if (type === FinancialTransactionType.EXPENSE) {
       incomeTotal = 0;
+      incomeEfective = 0;
       expenseTotal = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.EXPENSE }) || 0;
+      expenseEfective = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.EXPENSE, isPaid: true }) || 0;
     } else {
       incomeTotal = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.INCOME }) || 0;
+      incomeEfective = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.INCOME, isPaid: true }) || 0;
       expenseTotal = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.EXPENSE }) || 0;
+      expenseEfective = await this.repo.sum('amount', { ...wherePeriod, type: FinancialTransactionType.EXPENSE, isPaid: true }) || 0;
     }
     const balance = Number(incomeTotal) - Number(expenseTotal);
+    const balanceEfective = Number(incomeEfective) - Number(expenseEfective);
 
     // Current balance (todas as transações, sem filtro de período/type/category)
-    const allIncome = await this.repo.sum('amount', { deletedAt: IsNull(), type: FinancialTransactionType.INCOME });
-    const allExpense = await this.repo.sum('amount', { deletedAt: IsNull(), type: FinancialTransactionType.EXPENSE });
+    const allIncome = await this.repo.sum('amount', { deletedAt: IsNull(), type: FinancialTransactionType.INCOME, isPaid: true });
+    const allExpense = await this.repo.sum('amount', { deletedAt: IsNull(), type: FinancialTransactionType.EXPENSE, isPaid: true });
     const currentBalance = Number(allIncome || 0) - Number(allExpense || 0);
 
     return {
-      incomeTotal: Number(incomeTotal),
-      expenseTotal: Number(expenseTotal),
-      balance,
+      incomeTotal: { total: Number(incomeTotal), efective: Number(incomeEfective) },
+      expenseTotal: { total: Number(expenseTotal), efective: Number(expenseEfective) },
+      balance: { total: Number(balance), efective: Number(balanceEfective) },
       currentBalance,
     };
   }

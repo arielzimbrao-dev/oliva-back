@@ -58,9 +58,19 @@ export class MembersService {
   }
 
   async create(data: CreateMemberDto & { churchId: string }): Promise<MemberResponseDto> {
-    // Busca e incrementa nextId da church
+    // Busca igreja e plano
     const church = await this.churchRepository.findOneById(data.churchId);
     if (!church) throw new NotFoundException('Church not found');
+    let memberLimit = 99999999;
+    if (church.currentSubscriptionPlan && church.currentSubscriptionPlan.plan) {
+      memberLimit = church.currentSubscriptionPlan.plan.memberLimit ?? 99999999;
+    }
+    // Conta membros ativos
+    const activeMembers = await this.memberRepository.countByChurchAndStatus(data.churchId, 'ACTIVE');
+    if (activeMembers >= memberLimit) {
+      throw new NotFoundException('Limite de membros atingido para esta igreja.');
+    }
+    // Busca e incrementa nextId da church
     const idMember = (church.nextId || 0) + 1;
     church.nextId = idMember;
     await this.churchRepository.save(church);
@@ -78,11 +88,11 @@ export class MembersService {
         await this.memberDepartmentRepository.create({
           memberId: member.id,
           departmentId: dep.id,
-          isLeader: dep.isLeader,
+          isLeader: dep.isLeader || false,
         });
       }
     }
-    // Associa relações familiares se enviados
+    // Associa relações familiares se enviadas
     if (data.family && data.family.length) {
       for (const fam of data.family) {
         await this.memberFamilyRepository.create({
