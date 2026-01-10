@@ -32,6 +32,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: user.role?.slug || '',
+      churchId: user.churchId,
       memberName,
       churchName,
     };
@@ -52,6 +53,7 @@ export class AuthService {
         userId: user.id,
         email: user.email,
         role: user.role?.slug || '',
+        churchId: user.churchId,
         memberName,
         churchName,
       };
