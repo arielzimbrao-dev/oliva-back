@@ -9,7 +9,9 @@ import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
 dotenv.config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: process.env.ENV === 'development' ? ['log', 'error', 'warn', 'debug', 'verbose'] : ['error', 'warn'],
+  });
   app.use(json({ limit: '50mb' }));
   app.enableCors({
     origin: '*',
