@@ -6,6 +6,7 @@ import { Member } from '../../entities/member.entity';
 import { CreateMemberDto } from '../users/dtos/create-member.dto';
 import { UpdateMemberDto } from '../users/dtos/update-member.dto';
 import { MemberResponseDto, MemberListResponseDto, MemberDepartmentDto, MemberFamilyResponseDto } from './dtos/member-response.dto';
+import { MemberEventsResponseDto, EventDto, MemberInfoDto } from './dtos/member-events-response.dto';
 import { MemberDepartmentRepository } from '../../entities/repository/member-department.repository';
 import { MemberFamilyRepository } from '../../entities/repository/member-family.repository';
 import { FamilyRelationType } from '../../entities/member-family.entity';
@@ -204,5 +205,102 @@ export class MembersService {
       createdAt: member.createdAt,
       family,
     };
+  }
+
+  async findEvents(churchId: string, startDate: string, endDate: string): Promise<MemberEventsResponseDto> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Busca todos os membros ativos da igreja
+    const members = await this.memberRepository['memberRepository'].find({
+      where: { churchId, status: 'ACTIVE', deletedAt: IsNull() },
+      select: ['id', 'idMember', 'name', 'birthDate'],
+    });
+
+    // Busca todas as relações de casamento da igreja
+    const marriages = await this.memberFamilyRepository['memberFamilyRepository'].find({
+      where: { 
+        relation: FamilyRelationType.SPOUSE, 
+        deletedAt: IsNull() 
+      },
+      relations: ['member', 'relatedMember'],
+    });
+
+    const birthdays: EventDto[] = [];
+    const marriagesEvents: EventDto[] = [];
+
+    // Filtrar aniversários
+    for (const member of members) {
+      if (member.birthDate) {
+        const birthDate = new Date(member.birthDate);
+        if (this.isDateInRange(birthDate, start, end)) {
+          birthdays.push({
+            title: member.name,
+            date: birthDate.toISOString().split('T')[0],
+            members: [{
+              id: member.id,
+              name: member.name,
+            }],
+          });
+        }
+      }
+    }
+
+    // Filtrar aniversários de casamento (apenas da igreja específica)
+    const processedPairs = new Set<string>();
+    for (const marriage of marriages) {
+      if (marriage.marriageDate && marriage.member?.churchId === churchId) {
+        const pairKey = [marriage.memberId, marriage.relatedMemberId].sort().join('-');
+        
+        if (!processedPairs.has(pairKey)) {
+          processedPairs.add(pairKey);
+          const marriageDate = new Date(marriage.marriageDate);
+          
+          if (this.isDateInRange(marriageDate, start, end)) {
+            marriagesEvents.push({
+              title: `${marriage.member.name} & ${marriage.relatedMember.name}`,
+              date: marriageDate.toISOString().split('T')[0],
+              members: [
+                {
+                  id: marriage.member.id,
+                  name: marriage.member.name,
+                },
+                {
+                  id: marriage.relatedMember.id,
+                  name: marriage.relatedMember.name,
+                },
+              ],
+            });
+          }
+        }
+      }
+    }
+
+    return {
+      birthdays: birthdays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+      marriages: marriagesEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    };
+  }
+
+  private isDateInRange(date: Date, start: Date, end: Date): boolean {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    
+    const startMonth = start.getMonth() + 1;
+    const startDay = start.getDate();
+    const endMonth = end.getMonth() + 1;
+    const endDay = end.getDate();
+
+    // Cria datas fictícias no mesmo ano para comparação
+    const eventDate = new Date(2000, month - 1, day);
+    const rangeStart = new Date(2000, startMonth - 1, startDay);
+    const rangeEnd = new Date(2000, endMonth - 1, endDay);
+
+    // Se o intervalo atravessa o ano (ex: Dez 15 a Jan 15)
+    if (rangeStart > rangeEnd) {
+      return eventDate >= rangeStart || eventDate <= rangeEnd;
+    }
+    
+    return eventDate >= rangeStart && eventDate <= rangeEnd;
   }
 }
