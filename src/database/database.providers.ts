@@ -73,9 +73,9 @@ export const databaseProviders = [
       }
 
       // Função para popular/atualizar roles e plans
-      async function ensureDefaults() {
-        const roleRepo = ds.getRepository(Role);
-        const planRepo = ds.getRepository(Plan);
+      async function ensureDefaults(dataSource: DataSource) {
+        const roleRepo = dataSource.getRepository(Role);
+        const planRepo = dataSource.getRepository(Plan);
 
         // Roles
         const roles = [
@@ -165,7 +165,7 @@ export const databaseProviders = [
         }
       }
 
-      await ensureDefaults();
+      await ensureDefaults(ds);
       return ds;
     },
   },
