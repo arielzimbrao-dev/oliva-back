@@ -101,7 +101,7 @@ export const databaseProviders = [
             amountReal: '0.00',
             memberLimit: 999999999,
             linkPayment: '',
-            freeDays: 7
+            freeDays: 15
           },
           {
             id: '01dcf308-43a1-485b-912b-b10bb0040d77',
