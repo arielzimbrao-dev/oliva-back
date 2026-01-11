@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { IsNull } from 'typeorm';
+import { IsNull, ILike } from 'typeorm';
 import { MemberRepository } from '../../entities/repository/member.repository';
 import { DepartmentRepository } from '../../entities/repository/department.repository';
 import { Member } from '../../entities/member.entity';
@@ -26,12 +26,19 @@ export class MembersService {
   async findAll({ churchId, page = 1, limit = 10, filter = '' }: { churchId: string; page?: number; limit?: number; filter?: string }): Promise<MemberListResponseDto> {
     // Busca membros com departamentos
     const skip = (page - 1) * limit;
+    
+    const whereCondition: any = {
+      churchId,
+      deletedAt: IsNull(),
+    };
+    
+    // Se houver filtro, usa ILike para busca case-insensitive com correspondência parcial
+    if (filter) {
+      whereCondition.name = ILike(`%${filter}%`);
+    }
+    
     const [members, total] = await this.memberRepository['memberRepository'].findAndCount({
-      where: {
-        churchId,
-        ...(filter ? { name: filter } : {}),
-        deletedAt: IsNull(),
-      },
+      where: whereCondition,
       relations: ['memberDepartments', 'memberDepartments.department'],
       order: { createdAt: 'DESC' },
       skip,
