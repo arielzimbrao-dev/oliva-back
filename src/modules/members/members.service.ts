@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { IsNull } from 'typeorm';
 import { MemberRepository } from '../../entities/repository/member.repository';
 import { DepartmentRepository } from '../../entities/repository/department.repository';
@@ -60,6 +60,11 @@ export class MembersService {
   }
 
   async create(data: CreateMemberDto & { churchId: string }): Promise<MemberResponseDto> {
+    // Valida casamento único se houver vínculo de casamento
+    if (data.family && data.family.length) {
+      await this.validateUniqueMarriage(data.family, null);
+    }
+
     // Busca igreja e plano
     const church = await this.churchRepository.findOneById(data.churchId);
     if (!church) throw new NotFoundException('Church not found');
@@ -111,6 +116,12 @@ export class MembersService {
 
   async update(id: string, data: UpdateMemberDto & { churchId: string }): Promise<MemberResponseDto> {
     await this.findOne(id, data.churchId); // Garante existência
+    
+    // Valida casamento único se houver vínculo de casamento
+    if (data.family && data.family.length) {
+      await this.validateUniqueMarriage(data.family, id);
+    }
+
     let updateData: any = {};
     if (data.birthDate) {
       updateData.birthDate = new Date(data.birthDate);
@@ -172,6 +183,39 @@ export class MembersService {
   async remove(id: string, churchId: string): Promise<void> {
     await this.findOne(id, churchId);
     await this.memberRepository.softDelete(id);
+  }
+
+  private async validateUniqueMarriage(familyRelations: any[], currentMemberId: string | null): Promise<void> {
+    const spouseRelations = familyRelations.filter(fam => fam.type === FamilyRelationType.SPOUSE);
+    
+    if (spouseRelations.length === 0) return;
+
+    // Para cada relação de casamento
+    for (const spouse of spouseRelations) {
+      // Verifica se o membro relacionado já está casado
+      const existingMarriages = await this.memberFamilyRepository['memberFamilyRepository'].find({
+        where: [
+          { memberId: spouse.id, relation: FamilyRelationType.SPOUSE, deletedAt: IsNull() },
+          { relatedMemberId: spouse.id, relation: FamilyRelationType.SPOUSE, deletedAt: IsNull() }
+        ],
+        relations: ['member', 'relatedMember'],
+      });
+
+      // Se estamos editando, ignorar casamentos com o próprio membro atual
+      const validMarriages = existingMarriages.filter(m => {
+        if (!currentMemberId) return true;
+        return m.memberId !== currentMemberId && m.relatedMemberId !== currentMemberId;
+      });
+
+      if (validMarriages.length > 0) {
+        const marriedMember = validMarriages[0].member?.id === spouse.id 
+          ? validMarriages[0].member 
+          : validMarriages[0].relatedMember;
+        throw new BadRequestException(
+          `O membro ${marriedMember?.name || 'selecionado'} já está casado com outra pessoa. Uma pessoa não pode ter mais de um casamento ativo.`
+        );
+      }
+    }
   }
 
   private toMemberResponseDto(member: Member, families?: any[]): MemberResponseDto {

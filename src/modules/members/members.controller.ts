@@ -13,6 +13,20 @@ import { IsPublic } from '../auth/jwt/is-public.decoretor';
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
+  @Get('public')
+  @IsPublic()
+  async findAllPublic(
+    @Query('churchId') churchId: string,
+    @Query('name') name?: string
+  ): Promise<MemberListResponseDto> {
+    return this.membersService.findAll({
+      churchId,
+      page: 1,
+      limit: 9999,
+      filter: name || '',
+    });
+  }
+
   @Get()
   async findAll(
     @Request() req,
