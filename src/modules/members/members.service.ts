@@ -7,6 +7,7 @@ import { CreateMemberDto } from '../users/dtos/create-member.dto';
 import { UpdateMemberDto } from '../users/dtos/update-member.dto';
 import { MemberResponseDto, MemberListResponseDto, MemberDepartmentDto, MemberFamilyResponseDto } from './dtos/member-response.dto';
 import { MemberEventsResponseDto, EventDto, MemberInfoDto } from './dtos/member-events-response.dto';
+import { MemberStatsResponseDto } from './dtos/member-stats-response.dto';
 import { MemberDepartmentRepository } from '../../entities/repository/member-department.repository';
 import { MemberFamilyRepository } from '../../entities/repository/member-family.repository';
 import { FamilyRelationType } from '../../entities/member-family.entity';
@@ -302,5 +303,70 @@ export class MembersService {
     }
     
     return eventDate >= rangeStart && eventDate <= rangeEnd;
+  }
+
+  async getStats(churchId: string, startDate: string, endDate: string): Promise<MemberStatsResponseDto> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Total de membros ativos
+    const totalMembers = await this.memberRepository.countByChurchAndStatus(churchId, 'ACTIVE');
+
+    // Buscar todos os membros ativos para análise
+    const allMembers = await this.memberRepository['memberRepository'].find({
+      where: { churchId, status: 'ACTIVE', deletedAt: IsNull() },
+      relations: ['memberDepartments'],
+    });
+
+    // Novos membros (criados no período)
+    const newMembers = allMembers.filter(m => {
+      const createdDate = new Date(m.createdAt);
+      return createdDate >= start && createdDate <= end;
+    }).length;
+
+    // Membros servindo (têm pelo menos um departamento ativo)
+    const servingMembers = allMembers.filter(m => 
+      m.memberDepartments && m.memberDepartments.length > 0
+    ).length;
+
+    // Novos membros servindo (departamentos criados no período)
+    const memberDepartments = await this.memberDepartmentRepository['memberDepartmentRepository'].find({
+      where: { deletedAt: IsNull() },
+      relations: ['member'],
+    });
+
+    const newServingMembers = memberDepartments.filter(md => {
+      const createdDate = new Date(md.createdAt);
+      return md.member?.churchId === churchId && 
+             md.member?.status === 'ACTIVE' &&
+             createdDate >= start && 
+             createdDate <= end;
+    }).length;
+
+    // Membros batizados e não batizados
+    const baptizedMembers = allMembers.filter(m => m.baptismStatus === true).length;
+    const notBaptizedMembers = allMembers.filter(m => m.baptismStatus === false).length;
+
+    // Novos batizados (updatedAt no período e baptismStatus true)
+    // Nota: Isso é uma aproximação. Para ser mais preciso, seria necessário um histórico de mudanças
+    const newBaptizedMembers = allMembers.filter(m => {
+      if (!m.baptismStatus) return false;
+      const updatedDate = new Date(m.updatedAt);
+      const createdDate = new Date(m.createdAt);
+      // Considera como novo batizado se foi atualizado no período e não foi criado no mesmo período
+      return updatedDate >= start && 
+             updatedDate <= end && 
+             (updatedDate.getTime() - createdDate.getTime()) > 1000; // Diferença maior que 1 segundo
+    }).length;
+
+    return {
+      totalMembers,
+      newMembers,
+      servingMembers,
+      newServingMembers,
+      baptizedMembers,
+      notBaptizedMembers,
+      newBaptizedMembers,
+    };
   }
 }

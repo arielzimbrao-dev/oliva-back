@@ -43,7 +43,7 @@ export const databaseProviders = [
         logging: true,
       });
 
-      let ds: DataSource;
+      let ds: DataSource | null = null;
       let retries = 0;
       const maxRetries = 99999999;
       const retryDelay = 60000; // 1 minuto
@@ -66,6 +66,10 @@ export const databaseProviders = [
           console.log(`Aguardando ${retryDelay / 1000} segundos antes de tentar novamente...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
+      }
+
+      if (!ds) {
+        throw new Error('Falha ao conectar ao banco de dados após todas as tentativas.');
       }
 
       // Função para popular/atualizar roles e plans

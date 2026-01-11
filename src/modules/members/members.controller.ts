@@ -4,6 +4,7 @@ import { CreateMemberDto } from '../users/dtos/create-member.dto';
 import { UpdateMemberDto } from '../users/dtos/update-member.dto';
 import { MemberResponseDto, MemberListResponseDto } from './dtos/member-response.dto';
 import { MemberEventsResponseDto } from './dtos/member-events-response.dto';
+import { MemberStatsResponseDto } from './dtos/member-stats-response.dto';
 import { MembersService } from './members.service';
 import { IsPublic } from '../auth/jwt/is-public.decoretor';
 
@@ -34,6 +35,15 @@ export class MembersController {
     @Query('end_date') endDate: string
   ): Promise<MemberEventsResponseDto> {
     return this.membersService.findEvents(req.user.churchId, startDate, endDate);
+  }
+
+  @Get('stats')
+  async getStats(
+    @Request() req,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string
+  ): Promise<MemberStatsResponseDto> {
+    return this.membersService.getStats(req.user.churchId, startDate, endDate);
   }
 
   @Get(':id')
