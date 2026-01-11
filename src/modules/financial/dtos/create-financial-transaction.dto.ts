@@ -6,9 +6,8 @@ export class CreateFinancialTransactionDto {
   @IsDateString()
   date: string;
 
-  @IsNotEmpty()
   @IsString()
-  description: string;
+  description?: string;
 
   @IsNotEmpty()
   @IsString()

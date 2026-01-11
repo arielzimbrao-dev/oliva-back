@@ -43,7 +43,30 @@ export const databaseProviders = [
         logging: true,
       });
 
-      const ds = await dataSource.initialize();
+      let ds: DataSource;
+      let retries = 0;
+      const maxRetries = 99999999;
+      const retryDelay = 60000; // 1 minuto
+
+      while (retries < maxRetries) {
+        try {
+          console.log(`Tentando conectar ao banco de dados... (tentativa ${retries + 1}/${maxRetries})`);
+          ds = await dataSource.initialize();
+          console.log('Conexão com o banco de dados estabelecida com sucesso!');
+          break;
+        } catch (error) {
+          retries++;
+          console.error(`Erro ao conectar ao banco de dados (tentativa ${retries}/${maxRetries}):`, error.message);
+          
+          if (retries >= maxRetries) {
+            console.error('Número máximo de tentativas de reconexão excedido.');
+            throw error;
+          }
+          
+          console.log(`Aguardando ${retryDelay / 1000} segundos antes de tentar novamente...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+      }
 
       // Função para popular/atualizar roles e plans
       async function ensureDefaults() {
