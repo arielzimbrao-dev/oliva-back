@@ -3,7 +3,7 @@ import { FinancialTransactionType, RecurrenceType } from '../../../entities/fina
 export class FinancialTransactionResponseDto {
   id: string;
   date: string;
-  description: string;
+  description?: string;
   category: string;
   type: FinancialTransactionType;
   amount: number;

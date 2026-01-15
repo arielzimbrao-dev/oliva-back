@@ -3,6 +3,8 @@ import { JwtAuthGuard } from '../auth/jwt/jwt.auth.guard';
 import { CreateMemberDto } from '../users/dtos/create-member.dto';
 import { UpdateMemberDto } from '../users/dtos/update-member.dto';
 import { MemberResponseDto, MemberListResponseDto } from './dtos/member-response.dto';
+import { MemberEventsResponseDto } from './dtos/member-events-response.dto';
+import { MemberStatsResponseDto } from './dtos/member-stats-response.dto';
 import { MembersService } from './members.service';
 import { IsPublic } from '../auth/jwt/is-public.decoretor';
 
@@ -10,6 +12,20 @@ import { IsPublic } from '../auth/jwt/is-public.decoretor';
 @UseGuards(JwtAuthGuard)
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
+
+  @Get('public')
+  @IsPublic()
+  async findAllPublic(
+    @Query('churchId') churchId: string,
+    @Query('name') name?: string
+  ): Promise<MemberListResponseDto> {
+    return this.membersService.findAll({
+      churchId,
+      page: 1,
+      limit: 9999,
+      filter: name || '',
+    });
+  }
 
   @Get()
   async findAll(
@@ -24,6 +40,24 @@ export class MembersController {
       limit,
       filter: filter || '',
     });
+  }
+
+  @Get('events')
+  async findEvents(
+    @Request() req,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string
+  ): Promise<MemberEventsResponseDto> {
+    return this.membersService.findEvents(req.user.churchId, startDate, endDate);
+  }
+
+  @Get('stats')
+  async getStats(
+    @Request() req,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string
+  ): Promise<MemberStatsResponseDto> {
+    return this.membersService.getStats(req.user.churchId, startDate, endDate);
   }
 
   @Get(':id')

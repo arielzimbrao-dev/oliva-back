@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { IsNull } from 'typeorm';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { IsNull, ILike } from 'typeorm';
 import { MemberRepository } from '../../entities/repository/member.repository';
 import { DepartmentRepository } from '../../entities/repository/department.repository';
 import { Member } from '../../entities/member.entity';
 import { CreateMemberDto } from '../users/dtos/create-member.dto';
 import { UpdateMemberDto } from '../users/dtos/update-member.dto';
 import { MemberResponseDto, MemberListResponseDto, MemberDepartmentDto, MemberFamilyResponseDto } from './dtos/member-response.dto';
+import { MemberEventsResponseDto, EventDto, MemberInfoDto } from './dtos/member-events-response.dto';
+import { MemberStatsResponseDto } from './dtos/member-stats-response.dto';
 import { MemberDepartmentRepository } from '../../entities/repository/member-department.repository';
 import { MemberFamilyRepository } from '../../entities/repository/member-family.repository';
 import { FamilyRelationType } from '../../entities/member-family.entity';
@@ -24,12 +26,19 @@ export class MembersService {
   async findAll({ churchId, page = 1, limit = 10, filter = '' }: { churchId: string; page?: number; limit?: number; filter?: string }): Promise<MemberListResponseDto> {
     // Busca membros com departamentos
     const skip = (page - 1) * limit;
+    
+    const whereCondition: any = {
+      churchId,
+      deletedAt: IsNull(),
+    };
+    
+    // Se houver filtro, usa ILike para busca case-insensitive com correspondência parcial
+    if (filter) {
+      whereCondition.name = ILike(`%${filter}%`);
+    }
+    
     const [members, total] = await this.memberRepository['memberRepository'].findAndCount({
-      where: {
-        churchId,
-        ...(filter ? { name: filter } : {}),
-        deletedAt: IsNull(),
-      },
+      where: whereCondition,
       relations: ['memberDepartments', 'memberDepartments.department'],
       order: { createdAt: 'DESC' },
       skip,
@@ -58,6 +67,11 @@ export class MembersService {
   }
 
   async create(data: CreateMemberDto & { churchId: string }): Promise<MemberResponseDto> {
+    // Valida casamento único se houver vínculo de casamento
+    if (data.family && data.family.length) {
+      await this.validateUniqueMarriage(data.family, null);
+    }
+
     // Busca igreja e plano
     const church = await this.churchRepository.findOneById(data.churchId);
     if (!church) throw new NotFoundException('Church not found');
@@ -109,6 +123,12 @@ export class MembersService {
 
   async update(id: string, data: UpdateMemberDto & { churchId: string }): Promise<MemberResponseDto> {
     await this.findOne(id, data.churchId); // Garante existência
+    
+    // Valida casamento único se houver vínculo de casamento
+    if (data.family && data.family.length) {
+      await this.validateUniqueMarriage(data.family, id);
+    }
+
     let updateData: any = {};
     if (data.birthDate) {
       updateData.birthDate = new Date(data.birthDate);
@@ -172,6 +192,39 @@ export class MembersService {
     await this.memberRepository.softDelete(id);
   }
 
+  private async validateUniqueMarriage(familyRelations: any[], currentMemberId: string | null): Promise<void> {
+    const spouseRelations = familyRelations.filter(fam => fam.type === FamilyRelationType.SPOUSE);
+    
+    if (spouseRelations.length === 0) return;
+
+    // Para cada relação de casamento
+    for (const spouse of spouseRelations) {
+      // Verifica se o membro relacionado já está casado
+      const existingMarriages = await this.memberFamilyRepository['memberFamilyRepository'].find({
+        where: [
+          { memberId: spouse.id, relation: FamilyRelationType.SPOUSE, deletedAt: IsNull() },
+          { relatedMemberId: spouse.id, relation: FamilyRelationType.SPOUSE, deletedAt: IsNull() }
+        ],
+        relations: ['member', 'relatedMember'],
+      });
+
+      // Se estamos editando, ignorar casamentos com o próprio membro atual
+      const validMarriages = existingMarriages.filter(m => {
+        if (!currentMemberId) return true;
+        return m.memberId !== currentMemberId && m.relatedMemberId !== currentMemberId;
+      });
+
+      if (validMarriages.length > 0) {
+        const marriedMember = validMarriages[0].member?.id === spouse.id 
+          ? validMarriages[0].member 
+          : validMarriages[0].relatedMember;
+        throw new BadRequestException(
+          `O membro ${marriedMember?.name || 'selecionado'} já está casado com outra pessoa. Uma pessoa não pode ter mais de um casamento ativo.`
+        );
+      }
+    }
+  }
+
   private toMemberResponseDto(member: Member, families?: any[]): MemberResponseDto {
     const departments: MemberDepartmentDto[] = (member.memberDepartments || []).map(md => ({
       id: md.department?.id,
@@ -203,6 +256,168 @@ export class MembersService {
       baptismStatus: !!member.baptismStatus,
       createdAt: member.createdAt,
       family,
+    };
+  }
+
+  async findEvents(churchId: string, startDate: string, endDate: string): Promise<MemberEventsResponseDto> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Busca todos os membros ativos da igreja
+    const members = await this.memberRepository['memberRepository'].find({
+      where: { churchId, status: 'ACTIVE', deletedAt: IsNull() },
+      select: ['id', 'idMember', 'name', 'birthDate'],
+    });
+
+    // Busca todas as relações de casamento da igreja
+    const marriages = await this.memberFamilyRepository['memberFamilyRepository'].find({
+      where: { 
+        relation: FamilyRelationType.SPOUSE, 
+        deletedAt: IsNull() 
+      },
+      relations: ['member', 'relatedMember'],
+    });
+
+    const birthdays: EventDto[] = [];
+    const marriagesEvents: EventDto[] = [];
+
+    // Filtrar aniversários
+    for (const member of members) {
+      if (member.birthDate) {
+        const birthDate = new Date(member.birthDate);
+        if (this.isDateInRange(birthDate, start, end)) {
+          birthdays.push({
+            title: member.name,
+            date: birthDate.toISOString().split('T')[0],
+            members: [{
+              id: member.id,
+              name: member.name,
+            }],
+          });
+        }
+      }
+    }
+
+    // Filtrar aniversários de casamento (apenas da igreja específica)
+    const processedPairs = new Set<string>();
+    for (const marriage of marriages) {
+      if (marriage.marriageDate && marriage.member?.churchId === churchId) {
+        const pairKey = [marriage.memberId, marriage.relatedMemberId].sort().join('-');
+        
+        if (!processedPairs.has(pairKey)) {
+          processedPairs.add(pairKey);
+          const marriageDate = new Date(marriage.marriageDate);
+          
+          if (this.isDateInRange(marriageDate, start, end)) {
+            marriagesEvents.push({
+              title: `${marriage.member.name} & ${marriage.relatedMember.name}`,
+              date: marriageDate.toISOString().split('T')[0],
+              members: [
+                {
+                  id: marriage.member.id,
+                  name: marriage.member.name,
+                },
+                {
+                  id: marriage.relatedMember.id,
+                  name: marriage.relatedMember.name,
+                },
+              ],
+            });
+          }
+        }
+      }
+    }
+
+    return {
+      birthdays: birthdays.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+      marriages: marriagesEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    };
+  }
+
+  private isDateInRange(date: Date, start: Date, end: Date): boolean {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    
+    const startMonth = start.getMonth() + 1;
+    const startDay = start.getDate();
+    const endMonth = end.getMonth() + 1;
+    const endDay = end.getDate();
+
+    // Cria datas fictícias no mesmo ano para comparação
+    const eventDate = new Date(2000, month - 1, day);
+    const rangeStart = new Date(2000, startMonth - 1, startDay);
+    const rangeEnd = new Date(2000, endMonth - 1, endDay);
+
+    // Se o intervalo atravessa o ano (ex: Dez 15 a Jan 15)
+    if (rangeStart > rangeEnd) {
+      return eventDate >= rangeStart || eventDate <= rangeEnd;
+    }
+    
+    return eventDate >= rangeStart && eventDate <= rangeEnd;
+  }
+
+  async getStats(churchId: string, startDate: string, endDate: string): Promise<MemberStatsResponseDto> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Total de membros ativos
+    const totalMembers = await this.memberRepository.countByChurchAndStatus(churchId, 'ACTIVE');
+
+    // Buscar todos os membros ativos para análise
+    const allMembers = await this.memberRepository['memberRepository'].find({
+      where: { churchId, status: 'ACTIVE', deletedAt: IsNull() },
+      relations: ['memberDepartments'],
+    });
+
+    // Novos membros (criados no período)
+    const newMembers = allMembers.filter(m => {
+      const createdDate = new Date(m.createdAt);
+      return createdDate >= start && createdDate <= end;
+    }).length;
+
+    // Membros servindo (têm pelo menos um departamento ativo)
+    const servingMembers = allMembers.filter(m => 
+      m.memberDepartments && m.memberDepartments.length > 0
+    ).length;
+
+    // Novos membros servindo (departamentos criados no período)
+    const memberDepartments = await this.memberDepartmentRepository['memberDepartmentRepository'].find({
+      where: { deletedAt: IsNull() },
+      relations: ['member'],
+    });
+
+    const newServingMembers = memberDepartments.filter(md => {
+      const createdDate = new Date(md.createdAt);
+      return md.member?.churchId === churchId && 
+             md.member?.status === 'ACTIVE' &&
+             createdDate >= start && 
+             createdDate <= end;
+    }).length;
+
+    // Membros batizados e não batizados
+    const baptizedMembers = allMembers.filter(m => m.baptismStatus === true).length;
+    const notBaptizedMembers = allMembers.filter(m => m.baptismStatus === false).length;
+
+    // Novos batizados (updatedAt no período e baptismStatus true)
+    // Nota: Isso é uma aproximação. Para ser mais preciso, seria necessário um histórico de mudanças
+    const newBaptizedMembers = allMembers.filter(m => {
+      if (!m.baptismStatus) return false;
+      const updatedDate = new Date(m.updatedAt);
+      const createdDate = new Date(m.createdAt);
+      // Considera como novo batizado se foi atualizado no período e não foi criado no mesmo período
+      return updatedDate >= start && 
+             updatedDate <= end && 
+             (updatedDate.getTime() - createdDate.getTime()) > 1000; // Diferença maior que 1 segundo
+    }).length;
+
+    return {
+      totalMembers,
+      newMembers,
+      servingMembers,
+      newServingMembers,
+      baptizedMembers,
+      notBaptizedMembers,
+      newBaptizedMembers,
     };
   }
 }

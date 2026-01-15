@@ -43,12 +43,39 @@ export const databaseProviders = [
         logging: true,
       });
 
-      const ds = await dataSource.initialize();
+      let ds: DataSource | null = null;
+      let retries = 0;
+      const maxRetries = 99999999;
+      const retryDelay = 60000; // 1 minuto
+
+      while (retries < maxRetries) {
+        try {
+          console.log(`Tentando conectar ao banco de dados... (tentativa ${retries + 1}/${maxRetries})`);
+          ds = await dataSource.initialize();
+          console.log('Conexão com o banco de dados estabelecida com sucesso!');
+          break;
+        } catch (error) {
+          retries++;
+          console.error(`Erro ao conectar ao banco de dados (tentativa ${retries}/${maxRetries}):`, error.message);
+          
+          if (retries >= maxRetries) {
+            console.error('Número máximo de tentativas de reconexão excedido.');
+            throw error;
+          }
+          
+          console.log(`Aguardando ${retryDelay / 1000} segundos antes de tentar novamente...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+      }
+
+      if (!ds) {
+        throw new Error('Falha ao conectar ao banco de dados após todas as tentativas.');
+      }
 
       // Função para popular/atualizar roles e plans
-      async function ensureDefaults() {
-        const roleRepo = ds.getRepository(Role);
-        const planRepo = ds.getRepository(Plan);
+      async function ensureDefaults(dataSource: DataSource) {
+        const roleRepo = dataSource.getRepository(Role);
+        const planRepo = dataSource.getRepository(Plan);
 
         // Roles
         const roles = [
@@ -74,7 +101,7 @@ export const databaseProviders = [
             amountReal: '0.00',
             memberLimit: 999999999,
             linkPayment: '',
-            freeDays: 7
+            freeDays: 15
           },
           {
             id: '01dcf308-43a1-485b-912b-b10bb0040d77',
@@ -138,7 +165,7 @@ export const databaseProviders = [
         }
       }
 
-      await ensureDefaults();
+      await ensureDefaults(ds);
       return ds;
     },
   },

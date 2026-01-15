@@ -21,8 +21,8 @@ export class FinancialTransaction extends BaseEntity {
   @Column({ type: 'date' })
   date: string;
 
-  @Column()
-  description: string;
+  @Column({ nullable: true })
+  description?: string;
 
   @Column()
   category: string;
