@@ -7,7 +7,7 @@ export class DepartmentResponseDto {
   totalMember: number;
   createdAt: Date;
   updatedAt: Date;
-  members: { name: string; isLeader: boolean }[];
+  members: { id: string; name: string; isLeader: boolean }[];
 }
 
 export class DepartmentListResponseDto {

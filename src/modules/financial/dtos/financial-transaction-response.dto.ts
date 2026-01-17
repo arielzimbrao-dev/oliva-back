@@ -1,4 +1,4 @@
-import { FinancialTransactionType, RecurrenceType } from '../../../entities/financial-transaction.entity';
+import { FinancialTransactionType } from '../../../entities/financial-transaction.entity';
 
 export class FinancialTransactionResponseDto {
   id: string;
@@ -8,7 +8,6 @@ export class FinancialTransactionResponseDto {
   type: FinancialTransactionType;
   amount: number;
   isPaid: boolean;
-  recurrenceType: RecurrenceType;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

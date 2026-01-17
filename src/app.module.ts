@@ -34,6 +34,7 @@ import { MembersService } from './modules/members/members.service';
 import { MembersController } from './modules/members/members.controller';
 import { MemberFamilyRepository } from './entities/repository/member-family.repository';
 import { FinancialTransactionRepository } from './entities/repository/financial-transaction.repository';
+import { RecurringPaymentRepository } from './entities/repository/recurring-payment.repository';
 import { FinancialTransactionService } from './modules/financial/financial-transaction.service';
 import { FinancialTransactionController } from './modules/financial/financial-transaction.controller';
 import { NestModule, MiddlewareConsumer } from '@nestjs/common';
@@ -79,6 +80,7 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
     MemberDepartmentRepository,
     MemberFamilyRepository,
     FinancialTransactionRepository,
+    RecurringPaymentRepository,
     PaymentSessionRepository,
 
     AppService,

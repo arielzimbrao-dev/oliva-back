@@ -15,7 +15,7 @@ export class FinancialTransactionController {
   constructor(private readonly service: FinancialTransactionService, private readonly churchRepository: ChurchRepository) {}
 
   @Post()
-  async create(@Body() dto: CreateFinancialTransactionDto): Promise<FinancialTransactionResponseDto> {
+  async create(@Body() dto: CreateFinancialTransactionDto) {
     return this.service.create(dto);
   }
 
