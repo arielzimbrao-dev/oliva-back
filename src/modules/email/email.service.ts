@@ -51,14 +51,17 @@ export class EmailService {
         maxMessages: 100,
         rateDelta: 1000, // 1 second
         rateLimit: 10, // Max 10 messages per second
+        tls: {
+          rejectUnauthorized: false, // Allow self-signed certificates in development
+        },
       });
 
-      // Verify connection
+      // Verify connection (non-blocking, just for logging)
       this.transporter.verify((error, success) => {
         if (error) {
-          this.logger.error('Failed to verify email transporter:', error.message);
+          this.logger.warn(`Email transporter verification failed: ${error.message}. Emails may not work properly.`);
         } else {
-          this.logger.log('Email service ready and verified');
+          this.logger.log('Email service ready and verified ✓');
         }
       });
     } catch (error) {
