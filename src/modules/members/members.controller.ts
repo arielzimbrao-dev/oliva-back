@@ -19,12 +19,12 @@ export class MembersController {
   @Get('public')
   @IsPublic()
   @ApiOperation({ 
-    summary: 'Listar membros público',
-    description: 'Lista membros de uma igreja (público, sem autenticação)'
+    summary: 'List public members',
+    description: 'Lists members of a church (public, no authentication required)'
   })
-  @ApiQuery({ name: 'churchId', required: true, description: 'ID da igreja' })
-  @ApiQuery({ name: 'name', required: false, description: 'Filtro por nome' })
-  @ApiResponse({ status: 200, description: 'Lista de membros', type: MemberListResponseDto })
+  @ApiQuery({ name: 'churchId', required: true, description: 'Church ID' })
+  @ApiQuery({ name: 'name', required: false, description: 'Filter by name' })
+  @ApiResponse({ status: 200, description: 'List of members', type: MemberListResponseDto })
   async findAllPublic(
     @Query('churchId') churchId: string,
     @Query('name') name?: string
@@ -39,14 +39,14 @@ export class MembersController {
 
   @Get()
   @ApiOperation({ 
-    summary: 'Listar membros',
-    description: 'Lista membros da igreja do usuário autenticado com paginação'
+    summary: 'List members',
+    description: 'Lists members of the authenticated user\'s church with pagination'
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'filter', required: false, description: 'Filtro de busca' })
-  @ApiResponse({ status: 200, description: 'Lista de membros', type: MemberListResponseDto })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiQuery({ name: 'filter', required: false, description: 'Search filter' })
+  @ApiResponse({ status: 200, description: 'List of members', type: MemberListResponseDto })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async findAll(
     @Request() req,
     @Query('page') page: number = 1,
@@ -63,13 +63,13 @@ export class MembersController {
 
   @Get('events')
   @ApiOperation({ 
-    summary: 'Listar eventos de membros',
-    description: 'Retorna aniversários e outros eventos de membros em um período'
+    summary: 'List member events',
+    description: 'Returns birthdays and other member events within a period'
   })
-  @ApiQuery({ name: 'start_date', required: true, description: 'Data inicial (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'end_date', required: true, description: 'Data final (YYYY-MM-DD)' })
-  @ApiResponse({ status: 200, description: 'Eventos de membros', type: MemberEventsResponseDto })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiQuery({ name: 'start_date', required: true, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'end_date', required: true, description: 'End date (YYYY-MM-DD)' })
+  @ApiResponse({ status: 200, description: 'Member events', type: MemberEventsResponseDto })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async findEvents(
     @Request() req,
     @Query('start_date') startDate: string,
@@ -80,13 +80,13 @@ export class MembersController {
 
   @Get('stats')
   @ApiOperation({ 
-    summary: 'Estatísticas de membros',
-    description: 'Retorna estatísticas de crescimento e eventos em um período'
+    summary: 'Member statistics',
+    description: 'Returns growth and event statistics within a period'
   })
-  @ApiQuery({ name: 'start_date', required: true, description: 'Data inicial (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'end_date', required: true, description: 'Data final (YYYY-MM-DD)' })
-  @ApiResponse({ status: 200, description: 'Estatísticas', type: MemberStatsResponseDto })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiQuery({ name: 'start_date', required: true, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'end_date', required: true, description: 'End date (YYYY-MM-DD)' })
+  @ApiResponse({ status: 200, description: 'Statistics', type: MemberStatsResponseDto })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async getStats(
     @Request() req,
     @Query('start_date') startDate: string,

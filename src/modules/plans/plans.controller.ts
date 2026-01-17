@@ -12,12 +12,12 @@ export class PlansController {
   @Get()
   @IsPublic()
   @ApiOperation({ 
-    summary: 'Listar todos os planos',
-    description: 'Retorna lista de planos disponíveis (Trial, Bronze, Silver, Gold) com preços e limites'
+    summary: 'List all plans',
+    description: 'Returns list of available plans (Trial, Bronze, Silver, Gold) with prices and limits'
   })
   @ApiResponse({ 
     status: 200, 
-    description: 'Lista de planos',
+    description: 'List of plans',
     type: PlanListResponseDto
   })
   async getPlans(): Promise<PlanListResponseDto> {

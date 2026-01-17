@@ -16,15 +16,15 @@ export class UserController {
 
   @Get()
   @ApiOperation({ 
-    summary: 'Listar usuários (ADMIN only)',
-    description: 'Lista todos os usuários da igreja com paginação e filtro. Requer role ADMIN.'
+    summary: 'List users (ADMIN only)',
+    description: 'Lists all church users with pagination and filter. Requires ADMIN role.'
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número da página', example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página', example: 10 })
-  @ApiQuery({ name: 'filter', required: false, type: String, description: 'Filtro de busca' })
-  @ApiResponse({ status: 200, description: 'Lista de usuários', type: UserListResponseDto })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
-  @ApiResponse({ status: 403, description: 'Sem permissão (não é ADMIN)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page', example: 10 })
+  @ApiQuery({ name: 'filter', required: false, type: String, description: 'Search filter' })
+  @ApiResponse({ status: 200, description: 'List of users', type: UserListResponseDto })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 403, description: 'No permission (not ADMIN)' })
   async listUsers(
     @Request() req,
     @Query('page') page: number = 1,
@@ -39,14 +39,14 @@ export class UserController {
 
   @Get(':id')
   @ApiOperation({ 
-    summary: 'Obter usuário por ID (ADMIN only)',
-    description: 'Retorna detalhes de um usuário específico. Requer role ADMIN.'
+    summary: 'Get user by ID (ADMIN only)',
+    description: 'Returns details of a specific user. Requires ADMIN role.'
   })
-  @ApiParam({ name: 'id', description: 'ID do usuário' })
-  @ApiResponse({ status: 200, description: 'Detalhes do usuário', type: UserResponseDto })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
-  @ApiResponse({ status: 403, description: 'Sem permissão' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User details', type: UserResponseDto })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 403, description: 'No permission' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async getUserById(@Param('id') id: string, @Request() req): Promise<UserResponseDto> {
     if (req.user?.role?.slug !== 'ADMIN') {
       throw new NoAccessPermissionError();
@@ -56,14 +56,14 @@ export class UserController {
 
   @Post()
   @ApiOperation({ 
-    summary: 'Criar novo usuário (ADMIN only)',
-    description: 'Cria um novo usuário na igreja. Pode vincular a um membro existente. Requer role ADMIN.'
+    summary: 'Create new user (ADMIN only)',
+    description: 'Creates a new user in the church. Can link to an existing member. Requires ADMIN role.'
   })
   @ApiBody({ type: CreateUserDto })
-  @ApiResponse({ status: 201, description: 'Usuário criado', type: UserResponseDto })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
-  @ApiResponse({ status: 403, description: 'Sem permissão' })
+  @ApiResponse({ status: 201, description: 'User created', type: UserResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid data' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 403, description: 'No permission' })
   async createUser(
     @Body() body: CreateUserDto,
     @Request() req,
@@ -82,15 +82,15 @@ export class UserController {
 
   @Patch(':id')
   @ApiOperation({ 
-    summary: 'Atualizar usuário (ADMIN only)',
-    description: 'Atualiza dados de um usuário existente. Requer role ADMIN.'
+    summary: 'Update user (ADMIN only)',
+    description: 'Updates data of an existing user. Requires ADMIN role.'
   })
-  @ApiParam({ name: 'id', description: 'ID do usuário' })
+  @ApiParam({ name: 'id', description: 'User ID' })
   @ApiBody({ type: UpdateMemberDto })
-  @ApiResponse({ status: 200, description: 'Usuário atualizado', type: UserResponseDto })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
-  @ApiResponse({ status: 403, description: 'Sem permissão' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  @ApiResponse({ status: 200, description: 'User updated', type: UserResponseDto })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 403, description: 'No permission' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async updateUser(
     @Param('id') id: string,
     @Body() body: UpdateMemberDto,
@@ -104,13 +104,13 @@ export class UserController {
 
   @Delete(':id')
   @ApiOperation({ 
-    summary: 'Deletar usuário (ADMIN only)',
-    description: 'Remove um usuário permanentemente. Requer role ADMIN.'
+    summary: 'Delete user (ADMIN only)',
+    description: 'Permanently removes a user. Requires ADMIN role.'
   })
-  @ApiParam({ name: 'id', description: 'ID do usuário' })
+  @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Usuário deletado',
+    description: 'User deleted',
     schema: {
       type: 'object',
       properties: {
@@ -118,9 +118,9 @@ export class UserController {
       }
     }
   })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
-  @ApiResponse({ status: 403, description: 'Sem permissão' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 403, description: 'No permission' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async deleteUser(@Param('id') id: string, @Request() req): Promise<{ message: string }> {
     if (req.user?.role?.slug !== 'ADMIN') {
       throw new NoAccessPermissionError();

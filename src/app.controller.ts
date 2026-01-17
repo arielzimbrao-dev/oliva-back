@@ -11,12 +11,12 @@ export class AppController {
   @Get('health')
   @IsPublic()
   @ApiOperation({ 
-    summary: 'Health check do sistema',
-    description: 'Verifica se a API está operacional'
+    summary: 'System health check',
+    description: 'Checks if the API is operational'
   })
   @ApiResponse({ 
     status: 200, 
-    description: 'Sistema operacional',
+    description: 'System operational',
     schema: {
       type: 'object',
       properties: {
