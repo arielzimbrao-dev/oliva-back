@@ -90,6 +90,21 @@ export class PaymentController {
   })
   async handleStripeWebhook(@Req() req: RequestWithRawBody) {
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
+    
+    // Debug logging
+    this.logger.debug(`Webhook received. rawBody type: ${typeof req.rawBody}, body type: ${typeof req.body}`);
+    this.logger.debug(`rawBody exists: ${!!req.rawBody}, body exists: ${!!req.body}`);
+    
+    if (!webhookSecret) {
+      this.logger.error('STRIPE_WEBHOOK_SECRET not configured');
+      return;
+    }
+    
+    if (!req.rawBody) {
+      this.logger.error('No rawBody found in request. Middleware may not be working correctly.');
+      return;
+    }
+    
     let event: Stripe.Event;
 
     try {

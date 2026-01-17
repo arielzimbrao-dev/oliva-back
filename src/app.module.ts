@@ -129,11 +129,13 @@ export class AppModule implements NestModule {
       .apply(
         json({
           limit: '50mb',
-          verify: (req: any, res, buf) => {
+          verify: (req: any, res, buf, encoding) => {
             // Preserve raw body for Stripe webhook signature verification
-            // Webhook endpoint is POST /payment
-            if (req.method === 'POST' && req.originalUrl === '/payment') {
+            // The webhook endpoint is POST /payment
+            console.log(`[Middleware] Method: ${req.method}, URL: ${req.originalUrl}, Buffer length: ${buf?.length}`);
+            if (req.method === 'POST' && (req.originalUrl === '/payment' || req.originalUrl.startsWith('/payment?'))) {
               req.rawBody = buf;
+              console.log(`[Middleware] rawBody preserved for webhook. Length: ${buf?.length}`);
             }
           },
         }),
