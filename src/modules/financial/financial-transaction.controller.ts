@@ -1,6 +1,7 @@
 import type { Response } from 'express';
 import { Res } from '@nestjs/common';
 import { Controller, Post, Get, Put, Delete, Param, Body, Query, DefaultValuePipe, ParseIntPipe, Request, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { FinancialTransactionService } from './financial-transaction.service';
 import { CreateFinancialTransactionDto } from './dtos/create-financial-transaction.dto';
 import { UpdateFinancialTransactionDto } from './dtos/update-financial-transaction.dto';
@@ -9,17 +10,40 @@ import { ChurchRepository } from 'src/entities/repository/church.repository';
 import { Church } from 'src/entities/church.entity';
 import { JwtAuthGuard } from '../auth/jwt/jwt.auth.guard';
 
+@ApiTags('Financial Transactions')
 @Controller('financial-transactions')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class FinancialTransactionController {
   constructor(private readonly service: FinancialTransactionService, private readonly churchRepository: ChurchRepository) {}
 
   @Post()
+  @ApiOperation({ 
+    summary: 'Create financial transaction',
+    description: 'Creates a new income or expense transaction'
+  })
+  @ApiBody({ type: CreateFinancialTransactionDto })
+  @ApiResponse({ status: 201, description: 'Transaction created', type: FinancialTransactionResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(@Body() dto: CreateFinancialTransactionDto) {
     return this.service.create(dto);
   }
 
   @Get()
+  @ApiOperation({ 
+    summary: 'List financial transactions',
+    description: 'Lists all transactions with pagination and filters'
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'type', required: false, description: 'Transaction type (INCOME/EXPENSE)' })
+  @ApiQuery({ name: 'category', required: false, description: 'Category filter' })
+  @ApiQuery({ name: 'description', required: false, description: 'Description filter' })
+  @ApiResponse({ status: 200, description: 'List of transactions', type: FinancialTransactionListResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
@@ -33,6 +57,17 @@ export class FinancialTransactionController {
   }
 
   @Get('export')
+  @ApiOperation({ 
+    summary: 'Export transactions to CSV',
+    description: 'Exports filtered transactions in CSV format'
+  })
+  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'type', required: false, description: 'Transaction type' })
+  @ApiQuery({ name: 'category', required: false, description: 'Category filter' })
+  @ApiQuery({ name: 'description', required: false, description: 'Description filter' })
+  @ApiResponse({ status: 200, description: 'CSV file', content: { 'text/csv': {} } })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async exportCSV(
     @Res() res: Response,
     @Request() req,
