@@ -126,6 +126,7 @@ export class PaymentController {
       }
       return; // Always 200 OK
     }
+    this.logger.warn(event);
 
     // Idempotência básica
     if (processedEvents.has(event.id)) {
