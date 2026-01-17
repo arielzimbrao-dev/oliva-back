@@ -94,17 +94,17 @@ export class AuthService {
     // Gerar token seguro de reset (32 bytes = 64 hex chars)
     const resetToken = crypto.randomBytes(32).toString('hex');
 
-    // Hash do token para armazenar no banco (implementar depois)
+    // Hash do token para armazenar no banco
     const hashedToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
 
-    // TODO: Salvar hashedToken e expiração no banco de dados
-    // Exemplo: await this.userRepo.update(user.id, { 
-    //   resetPasswordToken: hashedToken,
-    //   resetPasswordExpires: new Date(Date.now() + 3600000) // 1 hora
-    // });
+    // Salvar hashedToken e expiração no banco (1 hora)
+    await this.userRepo.update(user.id, { 
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: new Date(Date.now() + 3600000) // 1 hora
+    });
 
     // Construir URL de reset
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://oliva.church';
@@ -119,6 +119,45 @@ export class AuthService {
 
     return {
       message: 'Email de recuperação enviado com sucesso. Verifique sua caixa de entrada.',
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    // Hash do token recebido para comparar com o banco
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    // Buscar usuário pelo token e verificar expiração
+    const user = await this.userRepo.findOne({
+      where: {
+        resetPasswordToken: hashedToken,
+      },
+    } as any);
+
+    if (!user) {
+      throw new BadRequestException('Token inválido ou expirado');
+    }
+
+    // Verificar se o token expirou
+    if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      throw new BadRequestException('Token expirado');
+    }
+
+    // Hash da nova senha
+    const hashedPassword = await cryptoUtils.hash(newPassword);
+
+    // Atualizar senha e limpar token
+    await this.userRepo.update(user.id, {
+      password: hashedPassword,
+      resetPasswordToken: undefined,
+      resetPasswordExpires: undefined,
+    });
+
+    return {
+      success: true,
+      message: 'Senha alterada com sucesso',
     };
   }
 }

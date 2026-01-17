@@ -38,6 +38,12 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   confirmCode?: string;
 
+  @Column({ nullable: true })
+  resetPasswordToken?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  resetPasswordExpires?: Date;
+
   @OneToMany(() => Member, (member) => member.user)
   members: Member[];
 

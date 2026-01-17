@@ -5,6 +5,7 @@ import { LoginDto } from './dtos/login.dto';
 import { LoginResponseDto } from './dtos/login-response.dto';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { IsPublic } from './jwt/is-public.decoretor';
 
 @ApiTags('Authentication')
@@ -76,5 +77,32 @@ export class AuthController {
   })
   async forgotPassword(@Body() body: ForgotPasswordDto): Promise<{ message: string }> {
     return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @IsPublic()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Redefinir senha',
+    description: 'Redefine a senha do usuário usando o token recebido por email. O token expira em 1 hora.'
+  })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Senha alterada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Senha alterada com sucesso' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Token inválido ou expirado'
+  })
+  async resetPassword(@Body() body: ResetPasswordDto): Promise<{ success: boolean; message: string }> {
+    return this.authService.resetPassword(body.token, body.password);
   }
 }
