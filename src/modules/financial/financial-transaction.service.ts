@@ -1,18 +1,46 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { FinancialTransaction } from '../../entities/financial-transaction.entity';
 import { FinancialTransactionRepository } from '../../entities/repository/financial-transaction.repository';
+import { RecurringPaymentRepository } from '../../entities/repository/recurring-payment.repository';
 import { CreateFinancialTransactionDto } from './dtos/create-financial-transaction.dto';
 import { UpdateFinancialTransactionDto } from './dtos/update-financial-transaction.dto';
 import { FinancialTransactionResponseDto, FinancialTransactionListResponseDto } from './dtos/financial-transaction-response.dto';
+import { RecurrenceFrequency } from '../../entities/recurring-payment.entity';
+
+interface CreateRecurringPaymentDto {
+  description: string;
+  category: string;
+  type: any;
+  amount: number;
+  frequency: RecurrenceFrequency;
+  startDate: string;
+  endDate?: string;
+  isActive?: boolean;
+}
 
 @Injectable()
 export class FinancialTransactionService {
   constructor(
     private readonly repo: FinancialTransactionRepository,
+    private readonly recurringRepo: RecurringPaymentRepository,
   ) {}
 
-  async create(dto: CreateFinancialTransactionDto): Promise<FinancialTransactionResponseDto> {
+  async create(dto: CreateFinancialTransactionDto): Promise<any> {
+    // Se recurrenceFrequency foi fornecido, criar como recorrente
+    if (dto.recurrenceFrequency) {
+      const recurringDto: CreateRecurringPaymentDto = {
+        description: dto.description || '',
+        category: dto.category,
+        type: dto.type,
+        amount: dto.amount,
+        frequency: dto.recurrenceFrequency,
+        startDate: dto.date,
+        isActive: true,
+      };
+      return this.createRecurring(recurringDto);
+    }
+    
+    // Caso contrário, criar transação normal
     const entity = await this.repo.create(dto);
     return this.toResponseDto(entity);
   }
@@ -120,14 +148,86 @@ export class FinancialTransactionService {
       return this.repo.findAll({ where });
     }
 
-  private toResponseDto(entity: FinancialTransaction): FinancialTransactionResponseDto {
-    const validRecurrenceTypes = [
-      'ONE_TIME', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'
-    ];
-    let recurrenceType = entity.recurrenceType as any;
-    if (!recurrenceType || !validRecurrenceTypes.includes(recurrenceType)) {
-      recurrenceType = 'ONE_TIME';
+  async createRecurring(dto: CreateRecurringPaymentDto): Promise<{ recurringPayment: any; generatedTransactions: FinancialTransactionResponseDto[] }> {
+    // Criar o pagamento recorrente
+    const recurringPayment = await this.recurringRepo.create(dto);
+
+    // Gerar transações para 1 ano à frente
+    const transactions = await this.generateRecurringTransactions(recurringPayment);
+
+    // Atualizar lastGeneratedDate
+    const lastDate = transactions[transactions.length - 1]?.date;
+    if (lastDate) {
+      recurringPayment.lastGeneratedDate = lastDate;
+      await this.recurringRepo.save(recurringPayment);
     }
+
+    return {
+      recurringPayment,
+      generatedTransactions: transactions,
+    };
+  }
+
+  private async generateRecurringTransactions(recurringPayment: any): Promise<FinancialTransactionResponseDto[]> {
+    const transactions: FinancialTransactionResponseDto[] = [];
+    const startDate = new Date(recurringPayment.startDate);
+    const currentDate = new Date(startDate);
+    
+    // Calcular quantas transações gerar
+    let occurrences = 12; // Default para MONTHLY
+    switch (recurringPayment.frequency) {
+      case RecurrenceFrequency.DAILY:
+        occurrences = 365;
+        break;
+      case RecurrenceFrequency.WEEKLY:
+        occurrences = 52;
+        break;
+      case RecurrenceFrequency.MONTHLY:
+        occurrences = 12;
+        break;
+      case RecurrenceFrequency.YEARLY:
+        occurrences = 1;
+        break;
+    }
+
+    for (let i = 0; i < occurrences; i++) {
+      const transactionDate = new Date(currentDate);
+      
+      // Criar a transação
+      const transaction = await this.repo.create({
+        date: transactionDate.toISOString().split('T')[0],
+        description: recurringPayment.description,
+        category: recurringPayment.category,
+        type: recurringPayment.type,
+        amount: recurringPayment.amount,
+        isPaid: i === 0, // Primeira transação marcada como paga, demais como não pagas
+        recurringPaymentId: recurringPayment.id,
+        isActive: true,
+      });
+
+      transactions.push(this.toResponseDto(transaction));
+
+      // Avançar para a próxima data
+      switch (recurringPayment.frequency) {
+        case RecurrenceFrequency.DAILY:
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+        case RecurrenceFrequency.WEEKLY:
+          currentDate.setDate(currentDate.getDate() + 7);
+          break;
+        case RecurrenceFrequency.MONTHLY:
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          break;
+        case RecurrenceFrequency.YEARLY:
+          currentDate.setFullYear(currentDate.getFullYear() + 1);
+          break;
+      }
+    }
+
+    return transactions;
+  }
+
+  private toResponseDto(entity: FinancialTransaction): FinancialTransactionResponseDto {
     return {
       id: entity.id,
       date: entity.date,
@@ -136,7 +236,6 @@ export class FinancialTransactionService {
       type: entity.type,
       amount: Number(entity.amount),
       isPaid: entity.isPaid ?? false,
-      recurrenceType,
       isActive: entity.isActive ?? true,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,

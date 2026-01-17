@@ -1,5 +1,6 @@
-import { IsNotEmpty, IsString, IsEnum, IsDateString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsEnum, IsDateString, IsNumber, IsOptional } from 'class-validator';
 import { FinancialTransactionType } from '../../../entities/financial-transaction.entity';
+import { RecurrenceFrequency } from 'src/entities/recurring-payment.entity';
 
 export class CreateFinancialTransactionDto {
   @IsNotEmpty()
@@ -20,4 +21,8 @@ export class CreateFinancialTransactionDto {
   @IsNotEmpty()
   @IsNumber()
   amount: number;
+
+  @IsOptional()
+  @IsEnum(RecurrenceFrequency)
+  recurrenceFrequency?: RecurrenceFrequency;
 }

@@ -56,6 +56,7 @@ export class DepartmentsService {
       updatedAt: dep.updatedAt,
       members: Array.isArray(dep.memberDepartments)
         ? dep.memberDepartments.map(md => ({
+            id: md.member?.id ?? '',
             name: md.member?.name ?? '',
             isLeader: !!md.isLeader
           }))

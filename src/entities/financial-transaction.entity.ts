@@ -8,14 +8,6 @@ export enum FinancialTransactionType {
   EXPENSE = 'EXPENSE',
 }
 
-export enum RecurrenceType {
-  ONE_TIME = 'ONE_TIME',
-  DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  YEARLY = 'YEARLY',
-}
-
 @Entity('financial_transactions')
 export class FinancialTransaction extends BaseEntity {
   @Column({ type: 'date' })
@@ -36,9 +28,6 @@ export class FinancialTransaction extends BaseEntity {
   @Column({ default: false })
   isPaid: boolean;
 
-  @Column({ type: 'enum', enum: RecurrenceType, default: RecurrenceType.ONE_TIME })
-  recurrenceType: RecurrenceType;
-
   @Column({ nullable: true })
   recurrenceInterval: number;
 
@@ -50,4 +39,7 @@ export class FinancialTransaction extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ nullable: true })
+  recurringPaymentId?: string;
 }
