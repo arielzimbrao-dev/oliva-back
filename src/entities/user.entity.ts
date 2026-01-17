@@ -44,6 +44,9 @@ export class User extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   resetPasswordExpires?: Date;
 
+  @Column({ type: 'timestamp', nullable: true })
+  lastLoginTs?: Date;
+
   @OneToMany(() => Member, (member) => member.user)
   members: Member[];
 

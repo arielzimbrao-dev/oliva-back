@@ -17,13 +17,13 @@ export class ChurchController {
   @Get('public')
   @IsPublic()
   @ApiOperation({ 
-    summary: 'Obter informações públicas da igreja',
-    description: 'Retorna nome e se a igreja permite adicionar novos membros (público)'
+    summary: 'Get church public information',
+    description: 'Returns church name and whether it allows adding new members (public endpoint)'
   })
-  @ApiQuery({ name: 'churchId', description: 'ID da igreja' })
+  @ApiQuery({ name: 'churchId', description: 'Church ID' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Informações públicas da igreja',
+    description: 'Church public information',
     schema: {
       type: 'object',
       properties: {
@@ -40,15 +40,15 @@ export class ChurchController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ 
-    summary: 'Obter informações da igreja do usuário',
-    description: 'Retorna todas as informações da igreja associada ao usuário autenticado'
+    summary: 'Get user church information',
+    description: 'Returns all information of the church associated with the authenticated user'
   })
   @ApiResponse({ 
     status: 200, 
-    description: 'Informações completas da igreja',
+    description: 'Complete church information',
     type: ChurchInfoResponseDto
   })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getChurchInfo(@Request() req): Promise<ChurchInfoResponseDto> {
     return this.churchService.getChurchInfo(req.user.churchId);
   }
@@ -57,16 +57,16 @@ export class ChurchController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ 
-    summary: 'Atualizar informações da igreja',
-    description: 'Atualiza os dados da igreja do usuário autenticado'
+    summary: 'Update church information',
+    description: 'Updates the authenticated user church data'
   })
   @ApiBody({ type: UpdateChurchDto })
   @ApiResponse({ 
     status: 200, 
-    description: 'Igreja atualizada com sucesso',
+    description: 'Church updated successfully',
     type: ChurchInfoResponseDto
   })
-  @ApiResponse({ status: 401, description: 'Não autenticado' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateChurch(@Request() req, @Body() dto: UpdateChurchDto): Promise<ChurchInfoResponseDto> {
     return this.churchService.updateChurch(req.user.churchId, dto);
   }
@@ -76,16 +76,16 @@ export class ChurchController {
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   @IsPublic()
   @ApiOperation({ 
-    summary: 'Registrar nova igreja',
-    description: 'Cria uma nova igreja com usuário administrador e plano Trial de 15 dias'
+    summary: 'Register new church',
+    description: 'Creates a new church with admin user and 15-day Trial plan'
   })
   @ApiBody({ type: RegisterChurchRequestDto })
   @ApiResponse({ 
     status: 200, 
-    description: 'Igreja registrada com sucesso',
+    description: 'Church registered successfully',
     type: RegisterChurchResponseDto
   })
-  @ApiResponse({ status: 400, description: 'Dados inválidos ou email já cadastrado' })
+  @ApiResponse({ status: 400, description: 'Invalid data or email already registered' })
   async signup(@Body() dto: RegisterChurchRequestDto): Promise<RegisterChurchResponseDto> {
     return this.churchService.registerChurch(dto);
   }

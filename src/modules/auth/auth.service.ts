@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserRepository } from '../../entities/repository/user.repository';
+import { ChurchRepository } from '../../entities/repository/church.repository';
 import { cryptoUtils } from 'src/common/util/crypto.utils';
 import { LoginResponseDto } from './dtos/login-response.dto';
 import { EmailService } from '../email/email.service';
@@ -11,17 +12,29 @@ import * as crypto from 'crypto';
 export class AuthService {
   constructor(
     private userRepo: UserRepository,
+    private churchRepo: ChurchRepository,
     private jwtService: JwtService,
     private emailService: EmailService,
     private configService: ConfigService,
   ) {}
 
   async login(email: string, password: string): Promise<LoginResponseDto> {
-    const user = await this.userRepo.findOne({ where: { email }, relations: ['members', 'church'] } as any);
+    const user = await this.userRepo.findOne({ where: { email }, relations: ['members', 'church', 'role'] } as any);
     if (!user) throw new UnauthorizedException();
 
     const ok = await cryptoUtils.compare(password, user.password);
     if (!ok) throw new UnauthorizedException();
+
+    // Verificar se é o primeiro login da igreja (church.lastLoginTs === null && user é ADMIN)
+    const isAdmin = user.role?.slug === 'ADMIN';
+    const firstLogin = isAdmin && !user.church?.lastLoginTs;
+
+    // Atualizar lastLoginTs do usuário
+    const now = new Date();
+    await this.userRepo.update(user.id, { lastLoginTs: now });
+
+    // Atualizar lastLoginTs da igreja
+    await this.churchRepo.update(user.churchId, { lastLoginTs: now });
 
     // Busca o nome do membro principal (primeiro membro associado ao user)
     const memberName = user.members && user.members.length > 0 ? user.members[0].name : undefined;
@@ -43,6 +56,7 @@ export class AuthService {
       churchId: user.churchId,
       memberName,
       churchName,
+      firstLogin,
     };
   }
 

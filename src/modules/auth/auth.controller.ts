@@ -16,18 +16,18 @@ export class AuthController {
   @Post('login')
   @IsPublic()
   @ApiOperation({ 
-    summary: 'Login de usuário',
-    description: 'Autentica um usuário com email e senha e retorna tokens de acesso'
+    summary: 'User login',
+    description: 'Authenticates a user with email and password and returns access tokens'
   })
   @ApiBody({ type: LoginDto })
   @ApiResponse({ 
     status: 200, 
-    description: 'Login realizado com sucesso',
+    description: 'Login successful',
     type: LoginResponseDto
   })
   @ApiResponse({ 
     status: 401, 
-    description: 'Credenciais inválidas'
+    description: 'Invalid credentials'
   })
   async login(@Body() body: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(body.email, body.password);
@@ -36,18 +36,18 @@ export class AuthController {
   @Post('refresh')
   @IsPublic()
   @ApiOperation({ 
-    summary: 'Renovar token de acesso',
-    description: 'Gera um novo access token usando o refresh token'
+    summary: 'Refresh access token',
+    description: 'Generates a new access token using the refresh token'
   })
   @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({ 
     status: 200, 
-    description: 'Token renovado com sucesso',
+    description: 'Token refreshed successfully',
     type: LoginResponseDto
   })
   @ApiResponse({ 
     status: 401, 
-    description: 'Refresh token inválido ou expirado'
+    description: 'Invalid or expired refresh token'
   })
   async refresh(@Body() body: RefreshTokenDto): Promise<LoginResponseDto> {
     return this.authService.refresh(body.refreshToken);
@@ -57,13 +57,13 @@ export class AuthController {
   @IsPublic()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 
-    summary: 'Solicitar recuperação de senha',
-    description: 'Envia email com link para redefinição de senha. Email é enviado no idioma configurado na igreja.'
+    summary: 'Request password recovery',
+    description: 'Sends an email with a password reset link. Email is sent in the church configured language.'
   })
   @ApiBody({ type: ForgotPasswordDto })
   @ApiResponse({ 
     status: 200, 
-    description: 'Email de recuperação enviado com sucesso',
+    description: 'Recovery email sent successfully',
     schema: {
       type: 'object',
       properties: {
@@ -73,7 +73,7 @@ export class AuthController {
   })
   @ApiResponse({ 
     status: 400, 
-    description: 'Usuário não encontrado ou não está ativo'
+    description: 'User not found or not active'
   })
   async forgotPassword(@Body() body: ForgotPasswordDto): Promise<{ message: string }> {
     return this.authService.forgotPassword(body.email);
@@ -83,13 +83,13 @@ export class AuthController {
   @IsPublic()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ 
-    summary: 'Redefinir senha',
-    description: 'Redefine a senha do usuário usando o token recebido por email. O token expira em 1 hora.'
+    summary: 'Reset password',
+    description: 'Resets user password using the token received via email. Token expires in 1 hour.'
   })
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({ 
     status: 200, 
-    description: 'Senha alterada com sucesso',
+    description: 'Password changed successfully',
     schema: {
       type: 'object',
       properties: {
@@ -100,7 +100,7 @@ export class AuthController {
   })
   @ApiResponse({ 
     status: 400, 
-    description: 'Token inválido ou expirado'
+    description: 'Invalid or expired token'
   })
   async resetPassword(@Body() body: ResetPasswordDto): Promise<{ success: boolean; message: string }> {
     return this.authService.resetPassword(body.token, body.password);

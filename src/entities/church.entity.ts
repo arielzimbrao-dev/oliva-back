@@ -45,6 +45,9 @@ export class Church extends BaseEntity {
   @Column({ default: 1 })
   memberActive: number; 
 
+  @Column({ type: 'timestamp', nullable: true })
+  lastLoginTs?: Date;
+
   @OneToMany(() => User, (user) => user.church)
   users: User[];
 
