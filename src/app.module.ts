@@ -4,7 +4,6 @@ import { Module } from '@nestjs/common';
 import { ContextInterceptor } from './common/util/context/context-interceptor';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { EmailController } from './modules/email/email.controller';
 import { EmailService } from './modules/email/email.service';
 import { Context } from './common/util/context/context';
 import { databaseProviders } from './database/database.providers';
@@ -114,8 +113,7 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
     DepartmentsController,
     MembersController,
     FinancialTransactionController,
-    PaymentController,
-    EmailController
+    PaymentController
   ],
   exports: [
     ...databaseProviders,
