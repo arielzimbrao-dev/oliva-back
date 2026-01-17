@@ -25,6 +25,37 @@ export class ChurchSubscription extends BaseEntity {
   @Column('varchar', { length: 3 })
   currency: string;
 
+  @Column({ nullable: true })
+  stripeCustomerId?: string;
+
+  @Column({ nullable: true })
+  stripeSubscriptionId?: string;
+
+  @Column({ 
+    type: 'enum',
+    enum: ['pending', 'active', 'past_due', 'canceled', 'expired'],
+    default: 'pending'
+  })
+  status: string;
+
+  @Column({ 
+    type: 'enum',
+    enum: ['recurring', 'trial', 'one_time'],
+    default: 'recurring'
+  })
+  type: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  startsAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  currentPeriodEnd?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  cancelAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  canceledAt?: Date;
 
   @ManyToOne(() => Church, (church) => church.subscriptions)
   @JoinColumn({ name: 'churchId' })

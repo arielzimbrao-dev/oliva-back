@@ -12,6 +12,7 @@ import { MemberFamily } from 'src/entities/member-family.entity';
 import { FinancialTransaction } from 'src/entities/financial-transaction.entity';
 import { PaymentSession } from 'src/entities/payment-session.entity';
 import { RecurringPayment } from 'src/entities/recurring-payment.entity';
+import { PaymentEvent } from 'src/entities/payment-event.entity';
 
 // Carregar variáveis do arquivo .env
 dotenv.config();
@@ -40,6 +41,7 @@ export const databaseProviders = [
           FinancialTransaction,
           PaymentSession,
           RecurringPayment,
+          PaymentEvent,
         ],
         synchronize: true,
         logging: true,
@@ -229,6 +231,11 @@ export const databaseProviders = [
   {
     provide: 'RECURRING_PAYMENT_REPOSITORY',
     useFactory: (dataSource: DataSource) => dataSource.getRepository(RecurringPayment),
+    inject: ['DATA_SOURCE'],
+  },
+  {
+    provide: 'PAYMENT_EVENT_REPOSITORY',
+    useFactory: (dataSource: DataSource) => dataSource.getRepository(PaymentEvent),
     inject: ['DATA_SOURCE'],
   },
 ];

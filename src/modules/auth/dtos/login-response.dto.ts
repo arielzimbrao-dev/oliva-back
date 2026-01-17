@@ -27,4 +27,12 @@ export class LoginResponseDto {
 
   @ApiProperty({ description: 'Indicates if it is the first login of the church (admin)', required: false })
   firstLogin?: boolean;
+
+  @ApiProperty({ 
+    description: 'Subscription status: trial (trial period), active (active and paid subscription), failed (payment failure), or null (no subscription)', 
+    required: false,
+    enum: ['trial', 'active', 'failed'],
+    nullable: true
+  })
+  subscriptionStatus?: 'trial' | 'active' | 'failed' | null;
 }

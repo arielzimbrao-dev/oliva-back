@@ -4,7 +4,7 @@ import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import { UserRepository } from '../../entities/repository/user.repository';
 import { ChurchRepository } from '../../entities/repository/church.repository';
-import { getResetPasswordEmail, getWelcomeEmail } from './templates/template.loader';
+import { getResetPasswordEmail, getWelcomeEmail, getPaymentFailedEmail } from './templates/template.loader';
 import { getTranslation } from './i18n/translations';
 
 @Injectable()
@@ -194,6 +194,89 @@ export class EmailService {
     } catch (error) {
       this.logger.error(
         `Failed to send welcome email to ${this.maskEmail(email)}`,
+        error.stack,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Send payment failure notification email to admin
+   * @param churchId Church ID
+   * @returns Promise<boolean> Success status
+   */
+  async sendPaymentFailedEmail(churchId: string): Promise<boolean> {
+    try {
+      if (!this.transporter) {
+        this.logger.error('Email transporter not initialized. Cannot send payment failed email.');
+        return false;
+      }
+
+      // Find church and admin user
+      const church = await this.churchRepository.findOne({
+        where: { id: churchId },
+        relations: ['users'],
+      });
+
+      if (!church) {
+        this.logger.error(`Church not found: ${churchId}`);
+        return false;
+      }
+
+      // Find admin user
+      const adminUser = await this.userRepository.findOne({
+        where: { churchId, role: { slug: 'ADMIN' } } as any,
+        relations: ['members', 'role'],
+      });
+
+      if (!adminUser) {
+        this.logger.error(`Admin user not found for church: ${churchId}`);
+        return false;
+      }
+
+      // Get admin name from first member or use default
+      const adminName = adminUser.members && adminUser.members.length > 0 
+        ? adminUser.members[0].name 
+        : 'Administrador';
+
+      // Get church preferred language
+      const language = church.preferredLanguage || 'pt';
+      const t = getTranslation(language).paymentFailed;
+
+      // Build dashboard URL
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://oliva.church';
+      const dashboardUrl = `${frontendUrl}/settings/subscription`;
+
+      const htmlContent = getPaymentFailedEmail(adminName, church.name, dashboardUrl, language);
+
+      const subject = this.isDevelopment
+        ? `[DEV] ${t.subject}`
+        : t.subject;
+
+      const fromAddress = this.configService.get<string>('EMAIL_USER');
+      if (!fromAddress) {
+        this.logger.error('EMAIL_USER not configured');
+        return false;
+      }
+
+      const mailOptions = {
+        from: `"Oliva" <${fromAddress}>`,
+        to: adminUser.email,
+        subject,
+        html: htmlContent,
+        replyTo: 'support@oliva.church',
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+
+      this.logger.log(
+        `Payment failed email sent successfully to ${this.maskEmail(adminUser.email)} for church ${church.name}. MessageId: ${info.messageId}`,
+      );
+
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Failed to send payment failed email for church ${churchId}`,
         error.stack,
       );
       return false;

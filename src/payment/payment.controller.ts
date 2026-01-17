@@ -11,18 +11,15 @@ import { ConfigService } from '@nestjs/config';
 import { PaymentService } from './payment.service';
 import type { RequestWithRawBody } from './request-with-raw-body.interface';
 import { Body, Res } from '@nestjs/common';
-// import type { Response } from 'express';
 import type { Response } from 'express';
 import { PlansService } from '../modules/plans/plans.service';
-
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from 'src/modules/auth/jwt/jwt.auth.guard';
-// Ajuste o path conforme sua estrutura real
 
 const processedEvents = new Set<string>();
 
-
-
+@ApiTags('Payment')
 @Controller('payment')
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name);
@@ -40,6 +37,37 @@ export class PaymentController {
 
   @Post('create-session')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create Stripe Checkout session for monthly subscription' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        planId: {
+          type: 'string',
+          description: 'ID of the subscription plan',
+          example: '550e8400-e29b-41d4-a716-446655440000'
+        }
+      },
+      required: ['planId']
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Checkout session created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        clientSecret: {
+          type: 'string',
+          description: 'Client secret for Stripe Checkout embedded mode',
+          example: 'cs_test_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0'
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Invalid plan ID or error creating session' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - valid JWT required' })
   async createStripeSession(@Body('planId') planId: string, @Res() res: Response, @Req() req): Promise<Response> {
     try {
       const session = await this.paymentService.createStripeSession(planId, req.user.churchId);
@@ -52,6 +80,14 @@ export class PaymentController {
 
   @Post()
   @HttpCode(200)
+  @ApiOperation({ 
+    summary: 'Stripe webhook endpoint',
+    description: 'Handles Stripe webhook events for subscription lifecycle (checkout.session.completed, subscription.updated, invoice.paid, etc.). This endpoint is called by Stripe servers and requires webhook signature verification.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Webhook event processed successfully (always returns 200 to prevent Stripe retries)' 
+  })
   async handleStripeWebhook(@Req() req: RequestWithRawBody) {
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
     let event: Stripe.Event;
@@ -80,6 +116,12 @@ export class PaymentController {
 
     try {
       switch (event.type) {
+        case 'checkout.session.completed':
+          await this.paymentService.handleCheckoutSessionCompleted(event);
+          break;
+        case 'checkout.session.expired':
+          await this.paymentService.handleCheckoutSessionExpired(event);
+          break;
         case 'customer.subscription.created':
           await this.paymentService.handleSubscriptionCreated(event);
           break;

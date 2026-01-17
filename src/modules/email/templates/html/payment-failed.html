@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="{{language}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{subject}}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 40px 20px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 600;">Oliva</h1>
+              <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px; opacity: 0.9;">{{footer}}</p>
+            </td>
+          </tr>
+          
+          <!-- Alert Icon -->
+          <tr>
+            <td align="center" style="padding: 30px 0 0 0;">
+              <div style="width: 80px; height: 80px; background-color: #fee; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                <span style="font-size: 48px; color: #f5576c;">⚠️</span>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 30px 30px 40px 30px;">
+              <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600; text-align: center;">{{greeting}}, {{userName}}!</h2>
+              
+              <p style="margin: 0 0 20px 0; color: #555555; font-size: 16px; line-height: 1.6;">
+                {{body1}} <strong>{{churchName}}</strong> {{body2}}
+              </p>
+              
+              <p style="margin: 0 0 30px 0; color: #555555; font-size: 16px; line-height: 1.6;">
+                {{body3}}
+              </p>
+
+              <div style="margin: 0 0 30px 0; padding: 20px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                  <strong>{{warningTitle}}</strong><br>
+                  {{warningText}}
+                </p>
+              </div>
+              
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 0 0 30px 0;">
+                    <a href="{{dashboardUrl}}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(245, 87, 108, 0.3);">
+                      {{buttonText}}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 0 0 20px 0; color: #555555; font-size: 14px; line-height: 1.6;">
+                {{body4}}
+              </p>
+              
+              <p style="margin: 0 0 20px 0; color: #555555; font-size: 14px; line-height: 1.6;">
+                {{body5}}
+              </p>
+              
+              <hr style="border: none; border-top: 1px solid #eeeeee; margin: 30px 0;">
+              
+              <p style="margin: 0; color: #999999; font-size: 12px; line-height: 1.6;">
+                {{securityNote}}
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #eeeeee;">
+              <p style="margin: 0 0 10px 0; color: #999999; font-size: 14px;">
+                {{thanksText}}
+              </p>
+              <p style="margin: 0; color: #999999; font-size: 12px;">
+                © 2026 Oliva Church Management System
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

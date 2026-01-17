@@ -85,3 +85,39 @@ export function getWelcomeEmail(
   
   return replaceVariables(template, variables);
 }
+
+/**
+ * Get payment failed email HTML
+ */
+export function getPaymentFailedEmail(
+  userName: string,
+  churchName: string,
+  dashboardUrl: string,
+  language: string = 'pt',
+): string {
+  const t = getTranslation(language).paymentFailed;
+  const template = loadTemplate('payment-failed');
+  
+  const variables: TemplateVariables = {
+    language: language || 'pt',
+    subject: t.subject,
+    greeting: t.greeting,
+    userName,
+    churchName,
+    body1: t.body1,
+    body2: t.body2,
+    body3: t.body3,
+    body4: t.body4,
+    body5: t.body5,
+    buttonText: t.buttonText,
+    dashboardUrl,
+    warningTitle: t.warningTitle,
+    warningText: t.warningText,
+    footer: t.footer,
+    securityNote: t.securityNote,
+    thanksText: t.thanksText,
+    year: new Date().getFullYear(),
+  };
+  
+  return replaceVariables(template, variables);
+}

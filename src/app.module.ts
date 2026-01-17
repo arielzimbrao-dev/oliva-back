@@ -43,6 +43,7 @@ import { NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { json } from 'body-parser';
 import { PaymentSession } from './entities/payment-session.entity';
 import { PaymentSessionRepository } from './entities/repository/payment-session.repository';
+import { PaymentEventRepository } from './entities/repository/payment-event.repository';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
     FinancialTransactionRepository,
     RecurringPaymentRepository,
     PaymentSessionRepository,
+    PaymentEventRepository,
 
     AppService,
     AuthService,

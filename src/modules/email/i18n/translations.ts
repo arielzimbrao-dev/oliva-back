@@ -18,6 +18,21 @@ export interface EmailTranslations {
     body2: string;
     body3: string;
   };
+  paymentFailed: {
+    subject: string;
+    greeting: string;
+    body1: string;
+    body2: string;
+    body3: string;
+    body4: string;
+    body5: string;
+    buttonText: string;
+    warningTitle: string;
+    warningText: string;
+    footer: string;
+    securityNote: string;
+    thanksText: string;
+  };
 }
 
 export const translations: Record<string, EmailTranslations> = {
@@ -41,6 +56,21 @@ export const translations: Record<string, EmailTranslations> = {
       body2: 'Sua conta na igreja <strong>{churchName}</strong> foi criada com sucesso. Agora você tem acesso a todas as funcionalidades para gerenciar sua comunidade de forma eficiente.',
       body3: 'Estamos felizes em tê-lo conosco! 🙏',
     },
+    paymentFailed: {
+      subject: 'Oliva: Falha no pagamento da sua assinatura',
+      greeting: 'Olá',
+      body1: 'Não foi possível processar o pagamento da assinatura mensal da igreja',
+      body2: 'em nosso sistema.',
+      body3: 'Isso pode ter acontecido devido a cartão expirado, saldo insuficiente ou outros problemas com o método de pagamento.',
+      body4: 'Para evitar a interrupção dos serviços, por favor acesse sua conta e atualize as informações de pagamento o mais breve possível.',
+      body5: 'Se você tiver dúvidas ou precisar de assistência, nossa equipe de suporte está à disposição.',
+      buttonText: 'Acessar Minha Conta',
+      warningTitle: 'Atenção!',
+      warningText: 'Após 3 tentativas de cobrança sem sucesso, sua assinatura será cancelada automaticamente e o acesso aos recursos será suspenso.',
+      footer: 'Oliva - Sistema de Gestão de Igrejas',
+      securityNote: 'Este é um email automático enviado pelo sistema Oliva. Se você não reconhece esta atividade, entre em contato com nosso suporte imediatamente.',
+      thanksText: 'Obrigado por confiar no Oliva!',
+    },
   },
   en: {
     resetPassword: {
@@ -61,6 +91,21 @@ export const translations: Record<string, EmailTranslations> = {
       body1: 'Welcome to <strong>Oliva</strong>, the complete church management system!',
       body2: 'Your account at <strong>{churchName}</strong> church has been successfully created. You now have access to all features to efficiently manage your community.',
       body3: 'We are happy to have you with us! 🙏',
+    },
+    paymentFailed: {
+      subject: 'Oliva: Payment Failed for Your Subscription',
+      greeting: 'Hello',
+      body1: 'We were unable to process the monthly subscription payment for',
+      body2: 'church in our system.',
+      body3: 'This may have occurred due to an expired card, insufficient funds, or other issues with your payment method.',
+      body4: 'To avoid service interruption, please access your account and update your payment information as soon as possible.',
+      body5: 'If you have questions or need assistance, our support team is available to help.',
+      buttonText: 'Access My Account',
+      warningTitle: 'Attention!',
+      warningText: 'After 3 unsuccessful billing attempts, your subscription will be automatically canceled and access to resources will be suspended.',
+      footer: 'Oliva - Church Management System',
+      securityNote: 'This is an automated email sent by the Oliva system. If you do not recognize this activity, please contact our support immediately.',
+      thanksText: 'Thank you for trusting Oliva!',
     },
   },
   es: {
@@ -83,6 +128,21 @@ export const translations: Record<string, EmailTranslations> = {
       body2: 'Tu cuenta en la iglesia <strong>{churchName}</strong> ha sido creada exitosamente. Ahora tienes acceso a todas las funcionalidades para gestionar tu comunidad de manera eficiente.',
       body3: '¡Estamos felices de tenerte con nosotros! 🙏',
     },
+    paymentFailed: {
+      subject: 'Oliva: Fallo en el pago de tu suscripción',
+      greeting: 'Hola',
+      body1: 'No pudimos procesar el pago de la suscripción mensual de la iglesia',
+      body2: 'en nuestro sistema.',
+      body3: 'Esto puede haber ocurrido debido a una tarjeta vencida, fondos insuficientes u otros problemas con el método de pago.',
+      body4: 'Para evitar la interrupción de los servicios, por favor accede a tu cuenta y actualiza la información de pago lo antes posible.',
+      body5: 'Si tienes dudas o necesitas asistencia, nuestro equipo de soporte está a tu disposición.',
+      buttonText: 'Acceder a Mi Cuenta',
+      warningTitle: '¡Atención!',
+      warningText: 'Después de 3 intentos de cobro sin éxito, tu suscripción será cancelada automáticamente y el acceso a los recursos será suspendido.',
+      footer: 'Oliva - Sistema de Gestión de Iglesias',
+      securityNote: 'Este es un correo automático enviado por el sistema Oliva. Si no reconoces esta actividad, contacta a nuestro soporte inmediatamente.',
+      thanksText: '¡Gracias por confiar en Oliva!',
+    },
   },
   fr: {
     resetPassword: {
@@ -103,6 +163,21 @@ export const translations: Record<string, EmailTranslations> = {
       body1: 'Bienvenue sur <strong>Oliva</strong>, le système complet de gestion pour les églises!',
       body2: 'Votre compte à l\'église <strong>{churchName}</strong> a été créé avec succès. Vous avez maintenant accès à toutes les fonctionnalités pour gérer efficacement votre communauté.',
       body3: 'Nous sommes heureux de vous avoir avec nous! 🙏',
+    },
+    paymentFailed: {
+      subject: 'Oliva: Échec du paiement de votre abonnement',
+      greeting: 'Bonjour',
+      body1: 'Nous n\'avons pas pu traiter le paiement de l\'abonnement mensuel de l\'église',
+      body2: 'dans notre système.',
+      body3: 'Cela peut être dû à une carte expirée, des fonds insuffisants ou d\'autres problèmes avec votre méthode de paiement.',
+      body4: 'Pour éviter l\'interruption des services, veuillez accéder à votre compte et mettre à jour vos informations de paiement dès que possible.',
+      body5: 'Si vous avez des questions ou avez besoin d\'aide, notre équipe de support est disponible.',
+      buttonText: 'Accéder à Mon Compte',
+      warningTitle: 'Attention!',
+      warningText: 'Après 3 tentatives de facturation infructueuses, votre abonnement sera automatiquement annulé et l\'accès aux ressources sera suspendu.',
+      footer: 'Oliva - Système de Gestion d\'Églises',
+      securityNote: 'Ceci est un email automatique envoyé par le système Oliva. Si vous ne reconnaissez pas cette activité, veuillez contacter notre support immédiatement.',
+      thanksText: 'Merci de faire confiance à Oliva!',
     },
   },
 };

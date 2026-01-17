@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserRepository } from '../../entities/repository/user.repository';
 import { ChurchRepository } from '../../entities/repository/church.repository';
+import { ChurchSubscriptionRepository } from '../../entities/repository/church-subscription.repository';
 import { cryptoUtils } from 'src/common/util/crypto.utils';
 import { LoginResponseDto } from './dtos/login-response.dto';
 import { EmailService } from '../email/email.service';
@@ -13,6 +14,7 @@ export class AuthService {
   constructor(
     private userRepo: UserRepository,
     private churchRepo: ChurchRepository,
+    private churchSubscriptionRepo: ChurchSubscriptionRepository,
     private jwtService: JwtService,
     private emailService: EmailService,
     private configService: ConfigService,
@@ -28,6 +30,25 @@ export class AuthService {
     // Verificar se é o primeiro login da igreja (church.lastLoginTs === null && user é ADMIN)
     const isAdmin = user.role?.slug === 'ADMIN';
     const firstLogin = isAdmin && !user.church?.lastLoginTs;
+
+    // Buscar subscription status (apenas para admin)
+    let subscriptionStatus: 'trial' | 'active' | 'failed' | null = null;
+    if (isAdmin) {
+      const subscription = await this.churchSubscriptionRepo.findOne({
+        where: { churchId: user.churchId },
+        order: { createdAt: 'DESC' }
+      } as any);
+
+      if (subscription) {
+        if (subscription.type === 'trial') {
+          subscriptionStatus = 'trial';
+        } else if (subscription.status === 'active') {
+          subscriptionStatus = 'active';
+        } else if (subscription.status === 'past_due') {
+          subscriptionStatus = 'failed';
+        }
+      }
+    }
 
     // Atualizar lastLoginTs do usuário
     const now = new Date();
@@ -57,6 +78,7 @@ export class AuthService {
       memberName,
       churchName,
       firstLogin,
+      subscriptionStatus,
     };
   }
 
