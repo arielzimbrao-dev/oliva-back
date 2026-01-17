@@ -4,7 +4,8 @@ import { Module } from '@nestjs/common';
 import { ContextInterceptor } from './common/util/context/context-interceptor';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { EmailModule } from './modules/email/email.module';
+import { EmailController } from './modules/email/email.controller';
+import { EmailService } from './modules/email/email.service';
 import { Context } from './common/util/context/context';
 import { databaseProviders } from './database/database.providers';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -53,7 +54,6 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
       ttl: 60000, // 60 seconds
       limit: 10, // 10 requests per minute (global default)
     }]),
-    EmailModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -102,7 +102,8 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
     DepartmentsService,
     MembersService,
     FinancialTransactionService,
-    PaymentService
+    PaymentService,
+    EmailService
   ],
   controllers: [
     AppController, 
@@ -113,7 +114,8 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
     DepartmentsController,
     MembersController,
     FinancialTransactionController,
-    PaymentController
+    PaymentController,
+    EmailController
   ],
   exports: [
     ...databaseProviders,
