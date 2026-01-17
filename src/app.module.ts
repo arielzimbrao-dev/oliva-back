@@ -2,7 +2,9 @@ import { PaymentController } from './payment/payment.controller';
 import { PaymentService } from './payment/payment.service';
 import { Module } from '@nestjs/common';
 import { ContextInterceptor } from './common/util/context/context-interceptor';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { EmailModule } from './modules/email/email.module';
 import { Context } from './common/util/context/context';
 import { databaseProviders } from './database/database.providers';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -47,6 +49,11 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 60 seconds
+      limit: 10, // 10 requests per minute (global default)
+    }]),
+    EmailModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -68,6 +75,10 @@ import { PaymentSessionRepository } from './entities/repository/payment-session.
     {
       provide: APP_INTERCEPTOR,
       useClass: ContextInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
 
     ChurchSubscriptionRepository,
