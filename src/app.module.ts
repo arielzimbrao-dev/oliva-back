@@ -124,18 +124,20 @@ import { PaymentEventRepository } from './entities/repository/payment-event.repo
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    // Apply json middleware to all routes with webhook raw body preservation
     consumer
       .apply(
         json({
+          limit: '50mb',
           verify: (req: any, res, buf) => {
             // Preserve raw body for Stripe webhook signature verification
-            // The webhook endpoint is POST /payment (without /webhook)
-            if (req.originalUrl === '/payment' || req.originalUrl.startsWith('/payment?')) {
+            // Webhook endpoint is POST /payment
+            if (req.method === 'POST' && req.originalUrl === '/payment') {
               req.rawBody = buf;
             }
           },
         }),
       )
-      .forRoutes(PaymentController);
+      .forRoutes('*'); // Apply to all routes
   }
 }
