@@ -102,14 +102,19 @@ export class PaymentController {
     
     if (!req.rawBody) {
       this.logger.error('No rawBody found in request. Middleware may not be working correctly.');
-      return;
+      //return;
+    }
+
+      if (!req.body) {
+      this.logger.error('No body found in request. Middleware may not be working correctly.');
+      //return;
     }
     
     let event: Stripe.Event;
 
     try {
       event = this.stripe.webhooks.constructEvent(
-        req.rawBody,
+        req.rawBody || req.body,
         (req.headers['stripe-signature'] as string) || '',
         webhookSecret,
       );
