@@ -91,30 +91,24 @@ export class PaymentController {
   async handleStripeWebhook(@Req() req: RequestWithRawBody) {
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
     
-    // Debug logging
-    this.logger.debug(`Webhook received. rawBody type: ${typeof req.rawBody}, body type: ${typeof req.body}`);
-    this.logger.debug(`rawBody exists: ${!!req.rawBody}, body exists: ${!!req.body}`);
-    
     if (!webhookSecret) {
       this.logger.error('STRIPE_WEBHOOK_SECRET not configured');
       return;
     }
     
-    if (!req.rawBody) {
-      this.logger.error('No rawBody found in request. Middleware may not be working correctly.');
-      //return;
-    }
-
-      if (!req.body) {
-      this.logger.error('No body found in request. Middleware may not be working correctly.');
-      //return;
+    // With raw() middleware, req.body is the Buffer
+    const payload = req.body;
+    
+    if (!payload) {
+      this.logger.error('No payload found in request');
+      return;
     }
     
     let event: Stripe.Event;
 
     try {
       event = this.stripe.webhooks.constructEvent(
-        req.rawBody || req.body,
+        payload,
         (req.headers['stripe-signature'] as string) || '',
         webhookSecret,
       );
@@ -126,7 +120,6 @@ export class PaymentController {
       }
       return; // Always 200 OK
     }
-    this.logger.warn(event);
 
     // Idempotência básica
     if (processedEvents.has(event.id)) {
@@ -134,6 +127,8 @@ export class PaymentController {
       return;
     }
     processedEvents.add(event.id);
+
+    this.logger.log(`Processing webhook event: ${event.type} (${event.id})`);
 
     try {
       switch (event.type) {

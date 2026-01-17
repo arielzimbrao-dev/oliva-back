@@ -1,6 +1,6 @@
 import { PaymentController } from './payment/payment.controller';
 import { PaymentService } from './payment/payment.service';
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ContextInterceptor } from './common/util/context/context-interceptor';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -39,8 +39,7 @@ import { FinancialTransactionRepository } from './entities/repository/financial-
 import { RecurringPaymentRepository } from './entities/repository/recurring-payment.repository';
 import { FinancialTransactionService } from './modules/financial/financial-transaction.service';
 import { FinancialTransactionController } from './modules/financial/financial-transaction.controller';
-import { NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { json } from 'body-parser';
+import { json, raw } from 'body-parser';
 import { PaymentSession } from './entities/payment-session.entity';
 import { PaymentSessionRepository } from './entities/repository/payment-session.repository';
 import { PaymentEventRepository } from './entities/repository/payment-event.repository';
@@ -124,22 +123,15 @@ import { PaymentEventRepository } from './entities/repository/payment-event.repo
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply json middleware to all routes with webhook raw body preservation
+    // Apply raw body parser ONLY to webhook endpoint
     consumer
-      .apply(
-        json({
-          limit: '50mb',
-          verify: (req: any, res, buf, encoding) => {
-            // Preserve raw body for Stripe webhook signature verification
-            // The webhook endpoint is POST /payment
-            console.log(`[Middleware] Method: ${req.method}, URL: ${req.originalUrl}, Buffer length: ${buf?.length}`);
-            if (req.method === 'POST' && (req.originalUrl === '/payment' || req.originalUrl.startsWith('/payment?'))) {
-              req.rawBody = buf;
-              console.log(`[Middleware] rawBody preserved for webhook. Length: ${buf?.length}`);
-            }
-          },
-        }),
-      )
-      .forRoutes('*'); // Apply to all routes
+      .apply(raw({ type: 'application/json' }))
+      .forRoutes({ path: 'payment', method: RequestMethod.POST });
+
+    // Apply json parser to all other routes
+    consumer
+      .apply(json({ limit: '50mb' }))
+      .exclude({ path: 'payment', method: RequestMethod.POST })
+      .forRoutes('*');
   }
 }
