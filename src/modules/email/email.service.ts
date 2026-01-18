@@ -3,15 +3,21 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import { UserRepository } from '../../entities/repository/user.repository';
 import { ChurchRepository } from '../../entities/repository/church.repository';
-import { getResetPasswordEmail, getWelcomeEmail, getPaymentFailedEmail } from './templates/template.loader';
 import { getTranslation } from './i18n/translations';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly resend: Resend | null = null;
+  private resend: Resend | null = null;
   private readonly isDevelopment: boolean;
   private readonly fromEmail: string;
+
+  // Resend Template IDs (configured in Resend dashboard)
+  private readonly TEMPLATE_IDS = {
+    welcome: 'b2d18ce4-ee87-47d8-bde1-31b62583b903',
+    resetPassword: '3f4a4e81-cd0c-4260-b7fc-c0f2d121ed30',
+    paymentError: '510273e8-1fd8-4e4f-9b85-1c66306cf3aa'
+  };
 
   constructor(
     private readonly configService: ConfigService,
@@ -22,7 +28,6 @@ export class EmailService {
     
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.fromEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || 
-                     this.configService.get<string>('EMAIL_USER') || 
                      'noreply@oliva.church';
     
     if (!apiKey) {
@@ -73,9 +78,6 @@ export class EmailService {
       // Get church preferred language
       const language = user.church?.preferredLanguage || 'pt';
       const t = getTranslation(language).resetPassword;
-      
-      const userName = 'Usuário'; // User entity doesn't have name field
-      const htmlContent = getResetPasswordEmail(userName, resetUrl, language, 60);
 
       const subject = this.isDevelopment
         ? `[DEV] ${t.subject}`
@@ -85,8 +87,17 @@ export class EmailService {
         from: `Oliva <${this.fromEmail}>`,
         to: [email],
         subject,
-        html: htmlContent
+        template: {
+          id: this.TEMPLATE_IDS.resetPassword,
+          variables: {
+            ...t,
+            resetUrl,
+            resetToken,
+            minutesValid: 60
+          }
+        }
       });
+
 
       if (error) {
         this.logger.error(
@@ -136,7 +147,7 @@ export class EmailService {
       }
       
       const t = getTranslation(language).welcome;
-      const htmlContent = getWelcomeEmail(userName, churchName, language);
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://oliva.church';
 
       const subject = this.isDevelopment
         ? `[DEV] ${t.subject}`
@@ -146,7 +157,16 @@ export class EmailService {
         from: `Oliva <${this.fromEmail}>`,
         to: [email],
         subject,
-        html: htmlContent
+        template: {
+          id: this.TEMPLATE_IDS.welcome,
+          variables: {
+            ...t,
+            userName,
+            churchName,
+            churchId: churchId || '',
+            frontendUrl
+          }
+        }
       });
 
       if (error) {
@@ -217,8 +237,6 @@ export class EmailService {
       const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://oliva.church';
       const dashboardUrl = `${frontendUrl}/settings/subscription`;
 
-      const htmlContent = getPaymentFailedEmail(adminName, church.name, dashboardUrl, language);
-
       const subject = this.isDevelopment
         ? `[DEV] ${t.subject}`
         : t.subject;
@@ -227,7 +245,17 @@ export class EmailService {
         from: `Oliva <${this.fromEmail}>`,
         to: [adminUser.email],
         subject,
-        html: htmlContent
+        template: {
+          id: this.TEMPLATE_IDS.paymentError,
+          variables: {
+            ...t,
+            adminName,
+            churchName: church.name,
+            churchId,
+            dashboardUrl,
+            frontendUrl
+          }
+        }
       });
 
       if (error) {
