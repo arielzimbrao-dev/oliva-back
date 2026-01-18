@@ -126,12 +126,12 @@ export class AppModule implements NestModule {
     // Apply raw body parser ONLY to webhook endpoint
     consumer
       .apply(raw({ type: 'application/json' }))
-      .forRoutes({ path: 'payment', method: RequestMethod.POST });
+      .forRoutes({ path: '/payment', method: RequestMethod.POST });
 
     // Apply json parser to all other routes
     consumer
       .apply(json({ limit: '50mb' }))
-      .exclude({ path: 'payment', method: RequestMethod.POST })
+      .exclude({ path: '/payment', method: RequestMethod.POST })
       .forRoutes('*');
   }
 }

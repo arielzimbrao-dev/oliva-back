@@ -98,6 +98,8 @@ export class PaymentController {
     
     // With raw() middleware, req.body is the Buffer
     const payload = req.body;
+    console.log('Raw webhook payload:', payload);
+    console.log('Stripe signature header:', req.headers['stripe-signature']);
     
     if (!payload) {
       this.logger.error('No payload found in request');
@@ -105,6 +107,7 @@ export class PaymentController {
     }
     
     let event: Stripe.Event;
+
 
     try {
       event = this.stripe.webhooks.constructEvent(
@@ -120,7 +123,7 @@ export class PaymentController {
       }
       return; // Always 200 OK
     }
-
+    console.log('Verified webhook event:', event.type, event.id);
     // Idempotência básica
     if (processedEvents.has(event.id)) {
       this.logger.warn(`Event ${event.id} already processed`);
@@ -129,6 +132,8 @@ export class PaymentController {
     processedEvents.add(event.id);
 
     this.logger.log(`Processing webhook event: ${event.type} (${event.id})`);
+
+    console.log('Event data object:', event.data.object);
 
     try {
       switch (event.type) {
