@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import { UserRepository } from '../../entities/repository/user.repository';
 import { ChurchRepository } from '../../entities/repository/church.repository';
 import { getResetPasswordEmail, getWelcomeEmail, getPaymentFailedEmail } from './templates/template.loader';
@@ -10,8 +9,9 @@ import { getTranslation } from './i18n/translations';
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: Transporter;
+  private readonly resend: Resend | null = null;
   private readonly isDevelopment: boolean;
+  private readonly fromEmail: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -19,62 +19,26 @@ export class EmailService {
     private readonly churchRepository: ChurchRepository,
   ) {
     this.isDevelopment = this.configService.get<string>('ENV') === 'development';
-    this.initializeTransporter();
-  }
-
-  /**
-   * Initialize Nodemailer transporter with Hostinger SMTP configuration
-   * Connection pooling enabled for production scale
-   */
-  private initializeTransporter(): void {
+    
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    this.fromEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || 
+                     this.configService.get<string>('EMAIL_USER') || 
+                     'noreply@oliva.church';
+    
+    if (!apiKey) {
+      this.logger.warn('RESEND_API_KEY not configured. Email service will be disabled.');
+      return;
+    }
+    
     try {
-      const host = this.configService.get<string>('EMAIL_HOST');
-      const port = this.configService.get<number>('EMAIL_PORT');
-      const user = this.configService.get<string>('EMAIL_USER');
-      const pass = this.configService.get<string>('EMAIL_PASS');
-
-      if (!host || !port || !user || !pass) {
-        this.logger.warn('Email configuration missing. Email service will be disabled.');
-        return;
-      }
-
-      // Port 465 requires SSL (secure: true), port 587 requires TLS (secure: false)
-      const isSSL = port === 465;
-
-      this.transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure: isSSL, // true for 465 (SSL), false for 587 (TLS)
-        auth: {
-          user,
-          pass,
-        },
-        pool: true, // Enable connection pooling for SaaS scale
-        maxConnections: 5,
-        maxMessages: 100,
-        rateDelta: 1000, // 1 second
-        rateLimit: 10, // Max 10 messages per second
-        connectionTimeout: 10000, // 10 seconds
-        socketTimeout: 10000, // 10 seconds
-        tls: {
-          rejectUnauthorized: false, // Allow self-signed certificates in development
-        },
-        logger: this.isDevelopment, // Enable debug logs in development
-        debug: this.isDevelopment, // Enable debug mode in development
-      });
-
-      // Verify connection (non-blocking, just for logging)
-      this.transporter.verify((error, success) => {
-        if (error) {
-          this.logger.warn(`Email transporter verification failed: ${error.message}. Service will continue but emails may not work. Check SMTP settings and network connectivity.`);
-        } else {
-          this.logger.log('Email service ready and verified ✓');
-        }
-      });
+      this.resend = new Resend(apiKey);
+      this.logger.log('✓ Resend email service initialized');
     } catch (error) {
-      this.logger.error('Failed to initialize email transporter:', error.message);
+      this.logger.error('Failed to initialize Resend:', error.message);
     }
   }
+
+
 
   /**
    * Send password reset email to user
@@ -89,8 +53,8 @@ export class EmailService {
     resetUrl: string,
   ): Promise<boolean> {
     try {
-      if (!this.transporter) {
-        this.logger.error('Email transporter not initialized. Cannot send password reset email.');
+      if (!this.resend) {
+        this.logger.error('Resend not initialized. Cannot send password reset email.');
         return false;
       }
 
@@ -117,24 +81,22 @@ export class EmailService {
         ? `[DEV] ${t.subject}`
         : t.subject;
 
-      const fromAddress = this.configService.get<string>('EMAIL_USER');
-      if (!fromAddress) {
-        this.logger.error('EMAIL_USER not configured');
+      const { data, error } = await this.resend.emails.send({
+        from: `Oliva <${this.fromEmail}>`,
+        to: [email],
+        subject,
+        html: htmlContent
+      });
+
+      if (error) {
+        this.logger.error(
+          `Failed to send password reset email to ${this.maskEmail(email)}: ${error.message}`,
+        );
         return false;
       }
 
-      const mailOptions = {
-        from: `"Oliva" <${fromAddress}>`,
-        to: email,
-        subject,
-        html: htmlContent,
-        replyTo: 'noreply@oliva.church',
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-
       this.logger.log(
-        `Password reset email sent successfully to ${this.maskEmail(email)}. MessageId: ${info.messageId}`,
+        `Password reset email sent successfully to ${this.maskEmail(email)}. MessageId: ${data.id}`,
       );
 
       return true;
@@ -161,8 +123,8 @@ export class EmailService {
     churchId?: string,
   ): Promise<boolean> {
     try {
-      if (!this.transporter) {
-        this.logger.error('Email transporter not initialized. Cannot send welcome email.');
+      if (!this.resend) {
+        this.logger.error('Resend not initialized. Cannot send welcome email.');
         return false;
       }
 
@@ -180,24 +142,22 @@ export class EmailService {
         ? `[DEV] ${t.subject}`
         : t.subject;
 
-      const fromAddress = this.configService.get<string>('EMAIL_USER');
-      if (!fromAddress) {
-        this.logger.error('EMAIL_USER not configured');
+      const { data, error } = await this.resend.emails.send({
+        from: `Oliva <${this.fromEmail}>`,
+        to: [email],
+        subject,
+        html: htmlContent
+      });
+
+      if (error) {
+        this.logger.error(
+          `Failed to send welcome email to ${this.maskEmail(email)}: ${error.message}`,
+        );
         return false;
       }
 
-      const mailOptions = {
-        from: `"Oliva" <${fromAddress}>`,
-        to: email,
-        subject,
-        html: htmlContent,
-        replyTo: 'noreply@oliva.church',
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-
       this.logger.log(
-        `Welcome email sent successfully to ${this.maskEmail(email)}. MessageId: ${info.messageId}`,
+        `Welcome email sent successfully to ${this.maskEmail(email)}. MessageId: ${data.id}`,
       );
 
       return true;
@@ -217,8 +177,8 @@ export class EmailService {
    */
   async sendPaymentFailedEmail(churchId: string): Promise<boolean> {
     try {
-      if (!this.transporter) {
-        this.logger.error('Email transporter not initialized. Cannot send payment failed email.');
+      if (!this.resend) {
+        this.logger.error('Resend not initialized. Cannot send payment failed email.');
         return false;
       }
 
@@ -263,24 +223,22 @@ export class EmailService {
         ? `[DEV] ${t.subject}`
         : t.subject;
 
-      const fromAddress = this.configService.get<string>('EMAIL_USER');
-      if (!fromAddress) {
-        this.logger.error('EMAIL_USER not configured');
+      const { data, error } = await this.resend.emails.send({
+        from: `Oliva <${this.fromEmail}>`,
+        to: [adminUser.email],
+        subject,
+        html: htmlContent
+      });
+
+      if (error) {
+        this.logger.error(
+          `Failed to send payment failed email to ${this.maskEmail(adminUser.email)}: ${error.message}`,
+        );
         return false;
       }
 
-      const mailOptions = {
-        from: `"Oliva" <${fromAddress}>`,
-        to: adminUser.email,
-        subject,
-        html: htmlContent,
-        replyTo: 'support@oliva.church',
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-
       this.logger.log(
-        `Payment failed email sent successfully to ${this.maskEmail(adminUser.email)} for church ${church.name}. MessageId: ${info.messageId}`,
+        `Payment failed email sent successfully to ${this.maskEmail(adminUser.email)} for church ${church.name}. MessageId: ${data.id}`,
       );
 
       return true;
@@ -317,12 +275,6 @@ export class EmailService {
    * Health check method for monitoring
    */
   async isHealthy(): Promise<boolean> {
-    try {
-      if (!this.transporter) return false;
-      await this.transporter.verify();
-      return true;
-    } catch {
-      return false;
-    }
+    return !!this.resend;
   }
 }
