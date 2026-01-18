@@ -38,10 +38,13 @@ export class EmailService {
         return;
       }
 
+      // Port 465 requires SSL (secure: true), port 587 requires TLS (secure: false)
+      const isSSL = port === 465;
+
       this.transporter = nodemailer.createTransport({
         host,
         port,
-        secure: false, // TLS
+        secure: isSSL, // true for 465 (SSL), false for 587 (TLS)
         auth: {
           user,
           pass,
