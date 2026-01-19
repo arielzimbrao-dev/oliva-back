@@ -183,9 +183,9 @@ export class PaymentService {
 
       this.logger.log(`Created church subscription: ${churchSubscription.id}`);
 
-      // 6. Update payment_session status
+      // 6. Update payment_session status to 'created' (will be activated on first invoice.paid)
       await this.paymentSessionRepository.update(paymentSession.id, { 
-        status: 'completed' 
+        status: 'created' 
       });
 
       // 7. Log event
@@ -425,8 +425,29 @@ export class PaymentService {
       return;
     }
 
-    // Ensure subscription is active after payment
-    if (churchSubscription.status !== 'active') {
+    // Check if there's a payment_session with status 'created' waiting to be activated
+    const pendingPaymentSession = await this.paymentSessionRepository.findOne({
+      where: { 
+        churchId: churchSubscription.churchId,
+        planId: churchSubscription.planId,
+        status: 'created'
+      },
+      order: { createdAt: 'DESC' }
+    } as any);
+
+    if (pendingPaymentSession) {
+      // First invoice paid - activate subscription and complete payment session
+      await this.churchSubscriptionRepository.update(churchSubscription.id, {
+        status: 'active',
+      });
+      
+      await this.paymentSessionRepository.update(pendingPaymentSession.id, {
+        status: 'completed'
+      });
+      
+      this.logger.log(`Activated church subscription ${churchSubscription.id} and completed payment session ${pendingPaymentSession.id}`);
+    } else if (churchSubscription.status !== 'active') {
+      // Reactivate if subscription was previously inactive (e.g., past_due)
       await this.churchSubscriptionRepository.update(churchSubscription.id, {
         status: 'active',
       });

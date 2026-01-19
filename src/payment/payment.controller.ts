@@ -16,6 +16,7 @@ import { PlansService } from '../modules/plans/plans.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from 'src/modules/auth/jwt/jwt.auth.guard';
+import { PaymentEventRepository } from '../entities/repository/payment-event.repository';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -27,6 +28,7 @@ export class PaymentController {
     private readonly paymentService: PaymentService,
     private readonly configService: ConfigService,
     private readonly plansService: PlansService,
+    private readonly paymentEventRepository: PaymentEventRepository,
   ) {
     this.stripe = new Stripe(configService.get<string>('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2024-06-20',
@@ -126,6 +128,22 @@ export class PaymentController {
     }
     
     this.logger.log(`✓ Signature verified - Processing webhook event: ${event.type} (${event.id})`);
+
+    // Save event for log and auditing (before processing)
+    try {
+      await this.paymentEventRepository.save({
+        eventType: event.type,
+        eventData: event as any,
+        processed: false,
+        sessionId: (event.data.object as any)?.id || null,
+        subscriptionId: (event.data.object as any)?.subscription || null,
+        customerId: (event.data.object as any)?.customer || null,
+      });
+      this.logger.log(`Saved webhook event ${event.id} for auditing`);
+    } catch (auditError) {
+      this.logger.error(`Failed to save webhook event for auditing: ${event.id}`, auditError);
+      // Continue processing even if audit save fails
+    }
 
     try {
       switch (event.type) {
