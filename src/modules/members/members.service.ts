@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { IsNull, ILike } from 'typeorm';
 import { MemberRepository } from '../../entities/repository/member.repository';
 import { DepartmentRepository } from '../../entities/repository/department.repository';
@@ -8,6 +8,7 @@ import { UpdateMemberDto } from '../users/dtos/update-member.dto';
 import { MemberResponseDto, MemberListResponseDto, MemberDepartmentDto, MemberFamilyResponseDto } from './dtos/member-response.dto';
 import { MemberEventsResponseDto, EventDto, MemberInfoDto } from './dtos/member-events-response.dto';
 import { MemberStatsResponseDto } from './dtos/member-stats-response.dto';
+import { MemberAlreadyMarriedError } from '../../common/exceptions/exception';
 import { MemberDepartmentRepository } from '../../entities/repository/member-department.repository';
 import { MemberFamilyRepository } from '../../entities/repository/member-family.repository';
 import { FamilyRelationType } from '../../entities/member-family.entity';
@@ -218,9 +219,7 @@ export class MembersService {
         const marriedMember = validMarriages[0].member?.id === spouse.id 
           ? validMarriages[0].member 
           : validMarriages[0].relatedMember;
-        throw new BadRequestException(
-          `O membro ${marriedMember?.name || 'selecionado'} já está casado com outra pessoa. Uma pessoa não pode ter mais de um casamento ativo.`
-        );
+        throw new MemberAlreadyMarriedError();
       }
     }
   }

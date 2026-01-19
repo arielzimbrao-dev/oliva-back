@@ -7,7 +7,7 @@ import { UserRepository } from '../../entities/repository/user.repository';
 import { RoleRepository } from '../../entities/repository/role.repository';
 import { MemberRepository } from '../../entities/repository/member.repository';
 import { MemberDepartmentRepository } from '../../entities/repository/member-department.repository';
-import { UserNotFoundError, EmailAlreadyInUseError } from '../../common/exceptions/exception';
+import { UserNotFoundError, EmailAlreadyInUseError, RoleNotFoundError } from '../../common/exceptions/exception';
 
 @Injectable()
 export class UserService {
@@ -44,7 +44,7 @@ export class UserService {
 
     const role = await this.roleRepository.findBySlug(roleSlug);
     if (!role) {
-      throw new BadRequestException(`role_not_found`);
+      throw new RoleNotFoundError();
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -101,7 +101,7 @@ export class UserService {
     if (updates.roleSlug) {
       const role = await this.roleRepository.findBySlug(updates.roleSlug);
       if (!role) {
-        throw new BadRequestException(`role_not_found`);
+        throw new RoleNotFoundError();
       }
       user.roleId = role.id;
     }

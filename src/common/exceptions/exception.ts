@@ -89,3 +89,27 @@ export class WebhookSignatureError extends HttpException {
     super('invalid_webhook_signature', HttpStatus.BAD_REQUEST);
   }
 }
+
+export class UserInactiveError extends HttpException {
+  constructor() {
+    super('user_inactive', HttpStatus.FORBIDDEN);
+  }
+}
+
+export class TokenExpiredError extends HttpException {
+  constructor() {
+    super('token_expired', HttpStatus.UNAUTHORIZED);
+  }
+}
+
+export class RoleNotFoundError extends HttpException {
+  constructor() {
+    super('role_not_found', HttpStatus.NOT_FOUND);
+  }
+}
+
+export class MemberAlreadyMarriedError extends HttpException {
+  constructor() {
+    super('member_already_married', HttpStatus.BAD_REQUEST);
+  }
+}

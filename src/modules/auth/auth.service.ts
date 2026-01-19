@@ -8,6 +8,7 @@ import { cryptoUtils } from 'src/common/util/crypto.utils';
 import { LoginResponseDto } from './dtos/login-response.dto';
 import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
+import { UserNotFoundError, UserInactiveError, InvalidTokenError, TokenExpiredError } from '../../common/exceptions/exception';
 
 @Injectable()
 export class AuthService {
@@ -118,12 +119,12 @@ export class AuthService {
     } as any);
 
     if (!user) {
-      throw new BadRequestException('Usuário não encontrado');
+      throw new UserNotFoundError();
     }
 
     // Verificar se o usuário está ativo
     if (user.state !== 'ACTIVE') {
-      throw new BadRequestException('Usuário não está ativo');
+      throw new UserInactiveError();
     }
 
     // Obter nome do membro (primeiro membro associado)
@@ -177,12 +178,12 @@ export class AuthService {
     } as any);
 
     if (!user) {
-      throw new BadRequestException('Token inválido ou expirado');
+      throw new InvalidTokenError();
     }
 
     // Verificar se o token expirou
     if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
-      throw new BadRequestException('Token expirado');
+      throw new TokenExpiredError();
     }
 
     // Hash da nova senha
