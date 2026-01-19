@@ -17,8 +17,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nes
 import Stripe from 'stripe';
 import { JwtAuthGuard } from 'src/modules/auth/jwt/jwt.auth.guard';
 
-const processedEvents = new Set<string>();
-
 @ApiTags('Payment')
 @Controller('payment')
 export class PaymentController {
@@ -78,7 +76,7 @@ export class PaymentController {
     }
   }
 
-  @Post()
+  @Post('webhook')
   @HttpCode(200)
   @ApiOperation({ 
     summary: 'Stripe webhook endpoint',
@@ -130,17 +128,8 @@ export class PaymentController {
       }
       return; // Always 200 OK
     }
-    console.log('Verified webhook event:', event.type, event.id);
-    // Idempotência básica
-    if (processedEvents.has(event.id)) {
-      this.logger.warn(`Event ${event.id} already processed`);
-      return;
-    }
-    processedEvents.add(event.id);
-
-    this.logger.log(`Processing webhook event: ${event.type} (${event.id})`);
-
-    console.log('Event data object:', event.data.object);
+    
+    this.logger.log(`✓ Signature verified - Processing webhook event: ${event.type} (${event.id})`);
 
     try {
       switch (event.type) {

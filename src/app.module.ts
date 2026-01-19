@@ -130,7 +130,7 @@ export class AppModule implements NestModule {
           limit: '50mb',
           verify: (req: any, res, buf, encoding) => {
             // Save raw buffer for webhook signature verification on /payment endpoint
-            if (req.url === '/payment' || req.url.startsWith('/payment?')) {
+            if (req.url === '/payment/webhook' || req.url.startsWith('/payment/webhook?')) {
               req.rawBody = buf.toString('utf8');
             }
           },

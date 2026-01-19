@@ -53,8 +53,20 @@ export class PaymentService {
       amount = Math.round(Number(plan.amountReal) * 100);
     }
 
+    // Find or create Stripe customer for this church
+    let customerId: string | undefined;
+    const existingSubscription = await this.churchSubscriptionRepository.findOne({
+      where: { churchId },
+      order: { createdAt: 'DESC' }
+    } as any);
+
+    if (existingSubscription?.stripeCustomerId) {
+      customerId = existingSubscription.stripeCustomerId;
+      this.logger.log(`Using existing Stripe customer: ${customerId}`);
+    }
+
     // Create Stripe session with SUBSCRIPTION mode
-    const session = await this.stripe.checkout.sessions.create({
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       line_items: [
         {
@@ -72,13 +84,28 @@ export class PaymentService {
           quantity: 1,
         },
       ],
+      client_reference_id: churchId, // Reconcile session with internal system
+      customer_email: church.email, // Pre-fill customer email
       metadata: {
         planId,
         churchId,
       },
+      subscription_data: {
+        metadata: {
+          planId,
+          churchId,
+        },
+      },
       ui_mode: 'embedded',
       return_url: `${this.configService.get<string>('FRONTEND_URL')}/settings?session_id={CHECKOUT_SESSION_ID}`,
-    });
+    };
+
+    // Add existing customer if found
+    if (customerId) {
+      sessionConfig.customer = customerId;
+    }
+
+    const session = await this.stripe.checkout.sessions.create(sessionConfig);
 
     // Save PaymentSession
     await this.paymentSessionRepository.create({
@@ -88,7 +115,7 @@ export class PaymentService {
       status: 'pending',
     });
 
-    this.logger.log(`Created checkout session ${session.id} for church ${churchId}`);
+    this.logger.log(`Created checkout session ${session.id} for church ${churchId} (customer: ${session.customer || 'new'})`);
     return session;
   }
 
@@ -106,7 +133,21 @@ export class PaymentService {
     await queryRunner.startTransaction();
 
     try {
-      // 1. Find payment_session by sessionId + status='pending'
+      // 1. Check if event already processed (idempotency via database)
+      const existingEvent = await this.paymentEventRepository.findOne({
+        where: { 
+          eventType: event.type,
+          sessionId: session.id
+        }
+      } as any);
+
+      if (existingEvent) {
+        this.logger.warn(`Event ${event.id} already processed (duplicate webhook)`);
+        await queryRunner.rollbackTransaction();
+        return;
+      }
+
+      // 2. Find payment_session by sessionId + status='pending'
       const paymentSession = await this.paymentSessionRepository.findOne({
         where: { sessionId: session.id, status: 'pending' }
       } as any);
@@ -117,16 +158,16 @@ export class PaymentService {
         return;
       }
 
-      // 2. Get subscription details from Stripe
+      // 3. Get subscription details from Stripe
       const subscription = await this.stripe.subscriptions.retrieve(session.subscription as string);
 
-      // 3. Get plan details
+      // 4. Get plan details
       const plan = await this.planRepository.findOneById(paymentSession.planId);
       if (!plan) {
         throw new Error(`Plan not found: ${paymentSession.planId}`);
       }
 
-      // 4. Create church_subscription
+      // 5. Create church_subscription
       const churchSubscription = await this.churchSubscriptionRepository.create({
         churchId: paymentSession.churchId,
         planId: paymentSession.planId,
@@ -142,12 +183,12 @@ export class PaymentService {
 
       this.logger.log(`Created church subscription: ${churchSubscription.id}`);
 
-      // 5. Update payment_session status
+      // 6. Update payment_session status
       await this.paymentSessionRepository.update(paymentSession.id, { 
         status: 'completed' 
       });
 
-      // 6. Log event
+      // 7. Log event
       await this.paymentEventRepository.save({
         churchId: paymentSession.churchId,
         customerId: session.customer as string,
