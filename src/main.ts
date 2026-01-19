@@ -11,6 +11,7 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: process.env.ENV === 'development' ? ['log', 'error', 'warn', 'debug', 'verbose'] : ['error', 'warn'],
+    rawBody: true,
   });
   // Note: json() middleware configured in AppModule to preserve rawBody for webhooks
   app.enableCors({

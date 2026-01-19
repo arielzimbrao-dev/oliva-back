@@ -96,11 +96,9 @@ export class PaymentController {
     
     // Use rawBody preserved by json() middleware's verify function
     // This contains the original payload string before parsing
-    const payload = req.rawBody || JSON.stringify(req.body);
+    const payload = req.rawBody;
     const signature = req.headers['stripe-signature'] as string;
-    
-    this.logger.log(`Webhook received - Has rawBody: ${!!req.rawBody}`);
-    this.logger.log(`Signature present: ${!!signature}`);
+  
     
     if (!payload) {
       this.logger.error('No payload found in request');
