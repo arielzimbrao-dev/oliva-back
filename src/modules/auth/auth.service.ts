@@ -36,11 +36,15 @@ export class AuthService {
     if (isAdmin) {
       const subscription = await this.churchSubscriptionRepo.findOne({
         where: { churchId: user.churchId },
+        relations: ['plan'],
         order: { createdAt: 'DESC' }
       } as any);
 
       if (subscription) {
-        if (subscription.type === 'trial') {
+        // Trial é identificado pelo plano "Trial" (amountDolar = 0.00)
+        const isTrial = subscription.plan?.name === 'Trial' || Number(subscription.amount) === 0;
+        
+        if (isTrial) {
           subscriptionStatus = 'trial';
         } else if (subscription.status === 'active') {
           subscriptionStatus = 'active';

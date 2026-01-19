@@ -104,7 +104,6 @@ export const databaseProviders = [
             amountEuro: '0.00',
             amountReal: '0.00',
             memberLimit: 999999999,
-            linkPayment: '',
             freeDays: 15
           },
           {
@@ -115,7 +114,6 @@ export const databaseProviders = [
             amountEuro: '25.00',
             amountReal: '149.00',
             memberLimit: 500,
-            linkPayment: 'https://buy.stripe.com/test_bJe6oJ3VH6U94qn2p10RG00',
             freeDays: 0
           },
           {
@@ -126,7 +124,6 @@ export const databaseProviders = [
             amountEuro: '49.00',
             amountReal: '299.00',
             memberLimit: 1000,
-            linkPayment: 'https://buy.stripe.com/test_7sY3cx77Ta6lg95bZB0RG01',
             freeDays: 0
           },
           {
@@ -137,7 +134,6 @@ export const databaseProviders = [
             amountEuro: '109.00',
             amountReal: '599.00',
             memberLimit: 999999999,
-            linkPayment: 'https://buy.stripe.com/test_14A5kF1Nzdixf515Bd0RG02',
             freeDays: 0
           },
         ];
@@ -153,16 +149,14 @@ export const databaseProviders = [
               exists.freeDays !== plan.freeDays ||
               exists.amountDolar !== plan.amountDolar ||
               exists.amountEuro !== plan.amountEuro ||
-              exists.amountReal !== plan.amountReal ||
-              exists.linkPayment !== plan.linkPayment
+              exists.amountReal !== plan.amountReal
             ) {
               await planRepo.update(plan.id, {
                 memberLimit: plan.memberLimit,
                 freeDays: plan.freeDays,
                 amountDolar: plan.amountDolar,
                 amountEuro: plan.amountEuro,
-                amountReal: plan.amountReal,
-                linkPayment: plan.linkPayment
+                amountReal: plan.amountReal
               });
             }
           }

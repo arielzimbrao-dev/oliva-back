@@ -38,16 +38,6 @@ export class ChurchSubscription extends BaseEntity {
   })
   status: string;
 
-  @Column({ 
-    type: 'enum',
-    enum: ['recurring', 'trial', 'one_time'],
-    default: 'recurring'
-  })
-  type: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  startsAt?: Date;
-
   @Column({ type: 'timestamp', nullable: true })
   currentPeriodEnd?: Date;
 

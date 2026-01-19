@@ -16,7 +16,8 @@ export class EmailService {
   private readonly TEMPLATE_IDS = {
     welcome: 'b2d18ce4-ee87-47d8-bde1-31b62583b903',
     resetPassword: '3f4a4e81-cd0c-4260-b7fc-c0f2d121ed30',
-    paymentError: '510273e8-1fd8-4e4f-9b85-1c66306cf3aa'
+    paymentError: '510273e8-1fd8-4e4f-9b85-1c66306cf3aa',
+    paymentActionRequired: 'PLACEHOLDER_TEMPLATE_ID' // TODO: Replace with actual Resend template ID
   };
 
   constructor(
@@ -273,6 +274,91 @@ export class EmailService {
     } catch (error) {
       this.logger.error(
         `Failed to send payment failed email for church ${churchId}`,
+        error.stack,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Send payment action required notification (3D Secure/SCA)
+   * @param churchId Church ID
+   * @param paymentUrl Stripe hosted invoice URL for authentication
+   * @returns Promise<boolean> Success status
+   */
+  async sendPaymentActionRequiredEmail(churchId: string, paymentUrl: string): Promise<boolean> {
+    try {
+      if (!this.resend) {
+        this.logger.error('Resend not initialized. Cannot send payment action required email.');
+        return false;
+      }
+
+      // Find church and admin user
+      const church = await this.churchRepository.findOne({
+        where: { id: churchId },
+        relations: ['users'],
+      });
+
+      if (!church) {
+        this.logger.error(`Church not found: ${churchId}`);
+        return false;
+      }
+
+      // Find admin user
+      const adminUser = await this.userRepository.findOne({
+        where: { churchId, role: { slug: 'ADMIN' } } as any,
+        relations: ['members', 'role'],
+      });
+
+      if (!adminUser) {
+        this.logger.error(`Admin user not found for church: ${churchId}`);
+        return false;
+      }
+
+      // Get admin name from first member or use default
+      const adminName = adminUser.members && adminUser.members.length > 0 
+        ? adminUser.members[0].name 
+        : 'Administrador';
+
+      // Get church preferred language
+      const language = church.preferredLanguage || 'pt';
+      const t = getTranslation(language).paymentActionRequired;
+
+      const subject = this.isDevelopment
+        ? `[DEV] ${t.subject}`
+        : t.subject;
+
+      const { data, error } = await this.resend.emails.send({
+        from: `Oliva <${this.fromEmail}>`,
+        to: [adminUser.email],
+        subject,
+        template: {
+          id: this.TEMPLATE_IDS.paymentActionRequired,
+          variables: {
+            ...t,
+            adminName,
+            churchName: church.name,
+            paymentUrl,
+            frontendUrl: this.configService.get<string>('FRONTEND_URL') || 'https://oliva.church'
+          }
+        }
+      });
+
+      if (error) {
+        this.logger.error(
+          `Failed to send payment action required email to ${this.maskEmail(adminUser.email)}: ${error.message}`,
+        );
+        return false;
+      }
+
+      this.logger.log(
+        `Payment action required email sent successfully to ${this.maskEmail(adminUser.email)} for church ${church.name}. MessageId: ${data.id}`,
+      );
+
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Failed to send payment action required email for church ${churchId}`,
         error.stack,
       );
       return false;

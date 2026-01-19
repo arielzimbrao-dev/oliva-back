@@ -174,10 +174,8 @@ export class PaymentService {
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: subscription.id,
         status: 'active',
-        type: 'recurring',
         amount: plan.amountDolar, // Adjust based on currency
         currency: session.currency?.toUpperCase() || 'USD',
-        startsAt: new Date(subscription.current_period_start * 1000),
         currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       } as any);
 
@@ -240,25 +238,6 @@ export class PaymentService {
 
       this.logger.log(`Expired payment session: ${session.id}`);
     }
-  }
-
-  /**
-   * CUSTOMER.SUBSCRIPTION.CREATED - Redundant (use checkout.session.completed)
-   */
-  async handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
-    const subscription = getEventData<StripeSubscription>(event);
-    this.logger.log(`Subscription created: ${subscription.id} (handled by checkout.session.completed)`);
-    
-    // Save event for auditing
-    await this.paymentEventRepository.save({
-      churchId: '', // Will be filled if we can find it
-      customerId: subscription.customer as string,
-      subscriptionId: subscription.id,
-      eventType: event.type,
-      eventData: event,
-      processed: true,
-      processedAt: new Date(),
-    });
   }
 
   /**
@@ -383,14 +362,21 @@ export class PaymentService {
     
     this.logger.log(`Processing invoice.paid: ${invoice.id}`);
 
-    if (!invoice.subscription) {
+    // Extract subscription ID from various locations in invoice
+    const subscriptionId = (invoice.subscription as string) || 
+                          (invoice as any).parent?.subscription_details?.subscription ||
+                          (invoice as any).lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
+
+    if (!subscriptionId) {
       this.logger.warn(`Invoice ${invoice.id} has no subscription - skipping`);
       return;
     }
 
+    this.logger.log(`Found subscription ID: ${subscriptionId}`);
+
     // Find church_subscription by stripeSubscriptionId
     let churchSubscription = await this.churchSubscriptionRepository.findOne({
-      where: { stripeSubscriptionId: invoice.subscription as string }
+      where: { stripeSubscriptionId: subscriptionId }
     } as any);
 
     // Fallback: retrieve subscription from Stripe to get metadata
@@ -457,7 +443,7 @@ export class PaymentService {
     await this.paymentEventRepository.save({
       churchId: churchSubscription.churchId,
       customerId: invoice.customer as string,
-      subscriptionId: invoice.subscription as string,
+      subscriptionId: subscriptionId,
       eventType: event.type,
       eventData: event,
       processed: true,
@@ -476,20 +462,27 @@ export class PaymentService {
     
     this.logger.log(`Processing invoice.payment_failed: ${invoice.id}`);
 
-    if (!invoice.subscription) {
+    // Extract subscription ID from various locations in invoice
+    const subscriptionId = (invoice.subscription as string) || 
+                          (invoice as any).parent?.subscription_details?.subscription ||
+                          (invoice as any).lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
+
+    if (!subscriptionId) {
       this.logger.warn(`Invoice ${invoice.id} has no subscription - skipping`);
       return;
     }
 
+    this.logger.log(`Found subscription ID: ${subscriptionId}`);
+
     // Find church_subscription by stripeSubscriptionId
     let churchSubscription = await this.churchSubscriptionRepository.findOne({
-      where: { stripeSubscriptionId: invoice.subscription as string }
+      where: { stripeSubscriptionId: subscriptionId }
     } as any);
 
     // Fallback: retrieve subscription from Stripe to get metadata
     if (!churchSubscription) {
       try {
-        const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+        const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
         if (subscription.metadata?.churchId) {
           this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
           churchSubscription = await this.churchSubscriptionRepository.findOne({
@@ -509,7 +502,7 @@ export class PaymentService {
           }
         }
       } catch (error) {
-        this.logger.error(`Failed to retrieve subscription from Stripe: ${invoice.subscription}`, error);
+        this.logger.error(`Failed to retrieve subscription from Stripe: ${subscriptionId}`, error);
       }
     }
 
@@ -526,7 +519,7 @@ export class PaymentService {
     await this.paymentEventRepository.save({
       churchId: churchSubscription.churchId,
       customerId: invoice.customer as string,
-      subscriptionId: invoice.subscription as string,
+      subscriptionId: subscriptionId,
       eventType: event.type,
       eventData: event as any,
       processed: true,
@@ -545,29 +538,83 @@ export class PaymentService {
   }
 
   /**
-   * INVOICE.CREATED - New invoice generated (optional logging)
+   * INVOICE.PAYMENT_ACTION_REQUIRED - Payment requires customer action (3D Secure/SCA)
    */
-  async handleInvoiceCreated(event: Stripe.Event): Promise<void> {
+  async handleInvoicePaymentActionRequired(event: Stripe.Event): Promise<void> {
     const invoice = getEventData<StripeInvoice>(event);
-    this.logger.log(`Invoice created: ${invoice.id}`);
     
-    // Optional: Save event for auditing
-    if (invoice.subscription) {
-      const churchSubscription = await this.churchSubscriptionRepository.findOne({
-        where: { stripeSubscriptionId: invoice.subscription as string }
-      } as any);
+    this.logger.log(`Processing invoice.payment_action_required: ${invoice.id}`);
 
-      if (churchSubscription) {
-        await this.paymentEventRepository.save({
-          churchId: churchSubscription.churchId,
-          customerId: invoice.customer as string,
-          subscriptionId: invoice.subscription as string,
-          eventType: event.type,
-          eventData: event,
-          processed: true,
-          processedAt: new Date(),
-        });
+    // Extract subscription ID from various locations in invoice
+    const subscriptionId = (invoice.subscription as string) || 
+                          (invoice as any).parent?.subscription_details?.subscription ||
+                          (invoice as any).lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
+
+    if (!subscriptionId) {
+      this.logger.warn(`Invoice ${invoice.id} has no subscription - skipping`);
+      return;
+    }
+
+    this.logger.log(`Found subscription ID: ${subscriptionId}`);
+
+    // Find church_subscription by stripeSubscriptionId
+    let churchSubscription = await this.churchSubscriptionRepository.findOne({
+      where: { stripeSubscriptionId: subscriptionId }
+    } as any);
+
+    // Fallback: retrieve subscription from Stripe to get metadata
+    if (!churchSubscription) {
+      try {
+        const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
+        if (subscription.metadata?.churchId) {
+          this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
+          churchSubscription = await this.churchSubscriptionRepository.findOne({
+            where: { 
+              churchId: subscription.metadata.churchId,
+              planId: subscription.metadata.planId,
+            },
+            order: { createdAt: 'DESC' }
+          } as any);
+
+          // Update with Stripe subscription ID if found
+          if (churchSubscription && !churchSubscription.stripeSubscriptionId) {
+            await this.churchSubscriptionRepository.update(churchSubscription.id, {
+              stripeSubscriptionId: subscription.id
+            });
+            this.logger.log(`Updated church subscription ${churchSubscription.id} with stripeSubscriptionId: ${subscription.id}`);
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Failed to retrieve subscription from Stripe: ${subscriptionId}`, error);
       }
+    }
+
+    if (!churchSubscription) {
+      this.logger.warn(`Church subscription not found for invoice: ${invoice.id}`);
+      return;
+    }
+
+    await this.paymentEventRepository.save({
+      churchId: churchSubscription.churchId,
+      customerId: invoice.customer as string,
+      subscriptionId: subscriptionId,
+      eventType: event.type,
+      eventData: event as any,
+      processed: true,
+      processedAt: new Date(),
+    });
+
+    this.logger.log(`Payment action required for church ${churchSubscription.churchId}: ${invoice.id}`);
+
+    // Send email notification with payment URL
+    try {
+      await this.emailService.sendPaymentActionRequiredEmail(
+        churchSubscription.churchId,
+        invoice.hosted_invoice_url || ''
+      );
+      this.logger.log(`Payment action required email sent to church ${churchSubscription.churchId}`);
+    } catch (emailError) {
+      this.logger.error(`Failed to send payment action required email to church ${churchSubscription.churchId}`, emailError);
     }
   }
 }

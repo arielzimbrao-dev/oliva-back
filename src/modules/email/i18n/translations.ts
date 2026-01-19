@@ -33,6 +33,18 @@ export interface EmailTranslations {
     securityNote: string;
     thanksText: string;
   };
+  paymentActionRequired: {
+    subject: string;
+    greeting: string;
+    body1: string;
+    body2: string;
+    body3: string;
+    buttonText: string;
+    warningTitle: string;
+    warningText: string;
+    footer: string;
+    securityNote: string;
+  };
 }
 
 export const translations: Record<string, EmailTranslations> = {
@@ -71,6 +83,18 @@ export const translations: Record<string, EmailTranslations> = {
       securityNote: 'Este é um email automático enviado pelo sistema Oliva. Se você não reconhece esta atividade, entre em contato com nosso suporte imediatamente.',
       thanksText: 'Obrigado por confiar no Oliva!',
     },
+    paymentActionRequired: {
+      subject: 'Oliva: Ação necessária para completar seu pagamento',
+      greeting: 'Olá',
+      body1: 'Seu banco requer autenticação adicional (3D Secure) para processar o pagamento da assinatura mensal da igreja',
+      body2: 'Por favor, clique no botão abaixo para completar a autenticação e finalizar o pagamento.',
+      body3: 'Este é um procedimento de segurança padrão para proteger transações online.',
+      buttonText: 'Autenticar Pagamento',
+      warningTitle: 'Importante!',
+      warningText: 'Este link expira em 24 horas. Se você não completar a autenticação, o pagamento será cancelado e sua assinatura pode ser suspensa.',
+      footer: 'Oliva - Sistema de Gestão de Igrejas',
+      securityNote: 'Este é um email automático enviado pelo sistema Oliva. Nunca compartilhe seus dados de pagamento por email.',
+    },
   },
   en: {
     resetPassword: {
@@ -106,6 +130,18 @@ export const translations: Record<string, EmailTranslations> = {
       footer: 'Oliva - Church Management System',
       securityNote: 'This is an automated email sent by the Oliva system. If you do not recognize this activity, please contact our support immediately.',
       thanksText: 'Thank you for trusting Oliva!',
+    },
+    paymentActionRequired: {
+      subject: 'Oliva: Action Required to Complete Your Payment',
+      greeting: 'Hello',
+      body1: 'Your bank requires additional authentication (3D Secure) to process the monthly subscription payment for',
+      body2: 'church. Please click the button below to complete authentication and finalize payment.',
+      body3: 'This is a standard security procedure to protect online transactions.',
+      buttonText: 'Authenticate Payment',
+      warningTitle: 'Important!',
+      warningText: 'This link expires in 24 hours. If you do not complete authentication, the payment will be canceled and your subscription may be suspended.',
+      footer: 'Oliva - Church Management System',
+      securityNote: 'This is an automated email sent by the Oliva system. Never share your payment information via email.',
     },
   },
   es: {
@@ -143,6 +179,18 @@ export const translations: Record<string, EmailTranslations> = {
       securityNote: 'Este es un correo automático enviado por el sistema Oliva. Si no reconoces esta actividad, contacta a nuestro soporte inmediatamente.',
       thanksText: '¡Gracias por confiar en Oliva!',
     },
+    paymentActionRequired: {
+      subject: 'Oliva: Acción requerida para completar tu pago',
+      greeting: 'Hola',
+      body1: 'Tu banco requiere autenticación adicional (3D Secure) para procesar el pago de la suscripción mensual de la iglesia',
+      body2: 'Por favor, haz clic en el botón de abajo para completar la autenticación y finalizar el pago.',
+      body3: 'Este es un procedimiento de seguridad estándar para proteger transacciones en línea.',
+      buttonText: 'Autenticar Pago',
+      warningTitle: '¡Importante!',
+      warningText: 'Este enlace expira en 24 horas. Si no completas la autenticación, el pago será cancelado y tu suscripción puede ser suspendida.',
+      footer: 'Oliva - Sistema de Gestión de Iglesias',
+      securityNote: 'Este es un correo automático enviado por el sistema Oliva. Nunca compartas tus datos de pago por correo.',
+    },
   },
   fr: {
     resetPassword: {
@@ -178,6 +226,18 @@ export const translations: Record<string, EmailTranslations> = {
       footer: 'Oliva - Système de Gestion d\'Églises',
       securityNote: 'Ceci est un email automatique envoyé par le système Oliva. Si vous ne reconnaissez pas cette activité, veuillez contacter notre support immédiatement.',
       thanksText: 'Merci de faire confiance à Oliva!',
+    },
+    paymentActionRequired: {
+      subject: 'Oliva: Action requise pour finaliser votre paiement',
+      greeting: 'Bonjour',
+      body1: 'Votre banque nécessite une authentification supplémentaire (3D Secure) pour traiter le paiement de l\'abonnement mensuel de l\'église',
+      body2: 'Veuillez cliquer sur le bouton ci-dessous pour compléter l\'authentification et finaliser le paiement.',
+      body3: 'Il s\'agit d\'une procédure de sécurité standard pour protéger les transactions en ligne.',
+      buttonText: 'Authentifier le Paiement',
+      warningTitle: 'Important!',
+      warningText: 'Ce lien expire dans 24 heures. Si vous ne complétez pas l\'authentification, le paiement sera annulé et votre abonnement peut être suspendu.',
+      footer: 'Oliva - Système de Gestion d\'Églises',
+      securityNote: 'Ceci est un email automatique envoyé par le système Oliva. Ne partagez jamais vos informations de paiement par email.',
     },
   },
 };

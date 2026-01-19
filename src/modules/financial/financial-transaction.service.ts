@@ -15,7 +15,6 @@ interface CreateRecurringPaymentDto {
   frequency: RecurrenceFrequency;
   startDate: string;
   endDate?: string;
-  isActive?: boolean;
 }
 
 @Injectable()
@@ -35,7 +34,6 @@ export class FinancialTransactionService {
         amount: dto.amount,
         frequency: dto.recurrenceFrequency,
         startDate: dto.date,
-        isActive: true,
       };
       return this.createRecurring(recurringDto);
     }
@@ -202,7 +200,6 @@ export class FinancialTransactionService {
         amount: recurringPayment.amount,
         isPaid: i === 0, // Primeira transação marcada como paga, demais como não pagas
         recurringPaymentId: recurringPayment.id,
-        isActive: true,
       });
 
       transactions.push(this.toResponseDto(transaction));
@@ -236,7 +233,7 @@ export class FinancialTransactionService {
       type: entity.type,
       amount: Number(entity.amount),
       isPaid: entity.isPaid ?? false,
-      isActive: entity.isActive ?? true,
+
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };

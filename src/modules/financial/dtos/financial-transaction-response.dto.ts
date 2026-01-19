@@ -23,8 +23,6 @@ export class FinancialTransactionResponseDto {
   @ApiProperty({ example: true })
   isPaid: boolean;
 
-  @ApiProperty({ example: true })
-  isActive: boolean;
 
   @ApiProperty()
   createdAt: Date;

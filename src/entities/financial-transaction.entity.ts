@@ -29,17 +29,5 @@ export class FinancialTransaction extends BaseEntity {
   isPaid: boolean;
 
   @Column({ nullable: true })
-  recurrenceInterval: number;
-
-  @Column({ nullable: true })
-  stripeSubscriptionId: string;
-
-  @Column({ nullable: true })
-  nextOccurrenceDate: string;
-
-  @Column({ default: true })
-  isActive: boolean;
-
-  @Column({ nullable: true })
   recurringPaymentId?: string;
 }

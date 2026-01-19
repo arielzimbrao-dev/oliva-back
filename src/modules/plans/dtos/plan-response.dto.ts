@@ -25,9 +25,6 @@ export class PlanResponseDto {
   @ApiProperty({ example: 30 })
   freeDays: number;
 
-  @ApiProperty({ example: 'https://payment.link', required: false })
-  linkPayment?: string;
-
   @ApiProperty()
   createdAt: Date;
 

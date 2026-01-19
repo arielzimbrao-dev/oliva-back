@@ -184,9 +184,6 @@ export class PaymentController {
         case 'checkout.session.expired':
           await this.paymentService.handleCheckoutSessionExpired(event);
           break;
-        case 'customer.subscription.created':
-          await this.paymentService.handleSubscriptionCreated(event);
-          break;
         case 'customer.subscription.updated':
           await this.paymentService.handleSubscriptionUpdated(event);
           break;
@@ -199,8 +196,8 @@ export class PaymentController {
         case 'invoice.payment_failed':
           await this.paymentService.handleInvoicePaymentFailed(event);
           break;
-        case 'invoice.created':
-          await this.paymentService.handleInvoiceCreated(event);
+        case 'invoice.payment_action_required':
+          await this.paymentService.handleInvoicePaymentActionRequired(event);
           break;
         default:
           this.logger.log(`Unhandled event type: ${event.type}`);
