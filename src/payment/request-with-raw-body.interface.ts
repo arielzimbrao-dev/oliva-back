@@ -1,5 +1,6 @@
 import { Request } from 'express';
 
 export interface RequestWithRawBody extends Request {
-  rawBody: Buffer;
+  rawBody?: Buffer | string;
+  body: any;
 }

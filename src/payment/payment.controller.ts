@@ -96,23 +96,30 @@ export class PaymentController {
       return;
     }
     
-    // With raw() middleware, req.body is the Buffer
-    const payload = req.body;
-    console.log('Raw webhook payload:', payload);
-    console.log('Stripe signature header:', req.headers['stripe-signature']);
+    // Use rawBody preserved by json() middleware's verify function
+    // This contains the original payload string before parsing
+    const payload = req.rawBody || JSON.stringify(req.body);
+    const signature = req.headers['stripe-signature'] as string;
+    
+    this.logger.log(`Webhook received - Has rawBody: ${!!req.rawBody}`);
+    this.logger.log(`Signature present: ${!!signature}`);
     
     if (!payload) {
       this.logger.error('No payload found in request');
       return;
     }
     
+    if (!signature) {
+      this.logger.error('No Stripe signature header found');
+      return;
+    }
+    
     let event: Stripe.Event;
-
 
     try {
       event = this.stripe.webhooks.constructEvent(
         payload,
-        (req.headers['stripe-signature'] as string) || '',
+        signature,
         webhookSecret,
       );
     } catch (err) {

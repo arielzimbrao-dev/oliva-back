@@ -39,7 +39,7 @@ import { FinancialTransactionRepository } from './entities/repository/financial-
 import { RecurringPaymentRepository } from './entities/repository/recurring-payment.repository';
 import { FinancialTransactionService } from './modules/financial/financial-transaction.service';
 import { FinancialTransactionController } from './modules/financial/financial-transaction.controller';
-import { json, raw } from 'body-parser';
+import { json } from 'body-parser';
 import { PaymentSession } from './entities/payment-session.entity';
 import { PaymentSessionRepository } from './entities/repository/payment-session.repository';
 import { PaymentEventRepository } from './entities/repository/payment-event.repository';
@@ -123,15 +123,19 @@ import { PaymentEventRepository } from './entities/repository/payment-event.repo
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply raw body parser ONLY to webhook endpoint
+    // Apply json parser with rawBody preservation for webhook verification
     consumer
-      .apply(raw({ type: 'application/json' }))
-      .forRoutes({ path: '/payment', method: RequestMethod.POST });
-
-    // Apply json parser to all other routes
-    consumer
-      .apply(json({ limit: '50mb' }))
-      .exclude({ path: '/payment', method: RequestMethod.POST })
+      .apply(
+        json({
+          limit: '50mb',
+          verify: (req: any, res, buf, encoding) => {
+            // Save raw buffer for webhook signature verification on /payment endpoint
+            if (req.url === '/payment' || req.url.startsWith('/payment?')) {
+              req.rawBody = buf.toString('utf8');
+            }
+          },
+        }),
+      )
       .forRoutes('*');
   }
 }
