@@ -129,9 +129,40 @@ export class PaymentController {
     
     this.logger.log(`✓ Signature verified - Processing webhook event: ${event.type} (${event.id})`);
 
+    // Extract metadata (churchId, planId) from various locations in the event
+    const extractMetadata = (event: Stripe.Event): { churchId?: string; planId?: string } => {
+      const obj = event.data.object as any;
+      
+      // Try direct metadata (for checkout.session, subscription)
+      if (obj.metadata?.churchId) {
+        return { churchId: obj.metadata.churchId, planId: obj.metadata.planId };
+      }
+      
+      // Try subscription_details.metadata (for invoices)
+      if (obj.parent?.subscription_details?.metadata?.churchId) {
+        return { 
+          churchId: obj.parent.subscription_details.metadata.churchId, 
+          planId: obj.parent.subscription_details.metadata.planId 
+        };
+      }
+      
+      // Try line items metadata (for invoices)
+      if (obj.lines?.data?.[0]?.metadata?.churchId) {
+        return { 
+          churchId: obj.lines.data[0].metadata.churchId, 
+          planId: obj.lines.data[0].metadata.planId 
+        };
+      }
+      
+      return {};
+    };
+
+    const metadata = extractMetadata(event);
+    
     // Save event for log and auditing (before processing)
     try {
       await this.paymentEventRepository.save({
+        churchId: metadata.churchId,
         eventType: event.type,
         eventData: event as any,
         processed: false,
@@ -139,7 +170,7 @@ export class PaymentController {
         subscriptionId: (event.data.object as any)?.subscription || null,
         customerId: (event.data.object as any)?.customer || null,
       });
-      this.logger.log(`Saved webhook event ${event.id} for auditing`);
+      this.logger.log(`Saved webhook event ${event.id} for auditing (churchId: ${metadata.churchId})`);
     } catch (auditError) {
       this.logger.error(`Failed to save webhook event for auditing: ${event.id}`, auditError);
       // Continue processing even if audit save fails
