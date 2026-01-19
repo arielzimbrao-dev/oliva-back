@@ -269,11 +269,32 @@ export class PaymentService {
     this.logger.log('Subscription updated: ' + subscription);
     
     this.logger.log(`Processing subscription.updated: ${subscription.id}`);
+    this.logger.log(`Subscription metadata: ${JSON.stringify(subscription.metadata)}`);
 
-    // Find church_subscription by stripeSubscriptionId
-    const churchSubscription = await this.churchSubscriptionRepository.findOne({
+    // Find church_subscription by stripeSubscriptionId OR by metadata
+    let churchSubscription = await this.churchSubscriptionRepository.findOne({
       where: { stripeSubscriptionId: subscription.id }
     } as any);
+
+    // Fallback: try to find by churchId from metadata
+    if (!churchSubscription && subscription.metadata?.churchId) {
+      this.logger.log(`Trying to find subscription by churchId from metadata: ${subscription.metadata.churchId}`);
+      churchSubscription = await this.churchSubscriptionRepository.findOne({
+        where: { 
+          churchId: subscription.metadata.churchId,
+          planId: subscription.metadata.planId,
+        },
+        order: { createdAt: 'DESC' }
+      } as any);
+
+      // If found, update with Stripe subscription ID
+      if (churchSubscription && !churchSubscription.stripeSubscriptionId) {
+        await this.churchSubscriptionRepository.update(churchSubscription.id, {
+          stripeSubscriptionId: subscription.id
+        });
+        this.logger.log(`Updated church subscription ${churchSubscription.id} with stripeSubscriptionId: ${subscription.id}`);
+      }
+    }
 
     if (!churchSubscription) {
       this.logger.warn(`Church subscription not found for Stripe subscription: ${subscription.id}`);
@@ -311,10 +332,24 @@ export class PaymentService {
     this.logger.log('Subscription updated: ' + subscription);
     
     this.logger.log(`Processing subscription.deleted: ${subscription.id}`);
+    this.logger.log(`Subscription metadata: ${JSON.stringify(subscription.metadata)}`);
 
-    const churchSubscription = await this.churchSubscriptionRepository.findOne({
+    // Find church_subscription by stripeSubscriptionId OR by metadata
+    let churchSubscription = await this.churchSubscriptionRepository.findOne({
       where: { stripeSubscriptionId: subscription.id }
     } as any);
+
+    // Fallback: try to find by churchId from metadata
+    if (!churchSubscription && subscription.metadata?.churchId) {
+      this.logger.log(`Trying to find subscription by churchId from metadata: ${subscription.metadata.churchId}`);
+      churchSubscription = await this.churchSubscriptionRepository.findOne({
+        where: { 
+          churchId: subscription.metadata.churchId,
+          planId: subscription.metadata.planId,
+        },
+        order: { createdAt: 'DESC' }
+      } as any);
+    }
 
     if (!churchSubscription) {
       this.logger.warn(`Church subscription not found for Stripe subscription: ${subscription.id}`);
@@ -353,9 +388,37 @@ export class PaymentService {
       return;
     }
 
-    const churchSubscription = await this.churchSubscriptionRepository.findOne({
+    // Find church_subscription by stripeSubscriptionId
+    let churchSubscription = await this.churchSubscriptionRepository.findOne({
       where: { stripeSubscriptionId: invoice.subscription as string }
     } as any);
+
+    // Fallback: retrieve subscription from Stripe to get metadata
+    if (!churchSubscription) {
+      try {
+        const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+        if (subscription.metadata?.churchId) {
+          this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
+          churchSubscription = await this.churchSubscriptionRepository.findOne({
+            where: { 
+              churchId: subscription.metadata.churchId,
+              planId: subscription.metadata.planId,
+            },
+            order: { createdAt: 'DESC' }
+          } as any);
+
+          // Update with Stripe subscription ID if found
+          if (churchSubscription && !churchSubscription.stripeSubscriptionId) {
+            await this.churchSubscriptionRepository.update(churchSubscription.id, {
+              stripeSubscriptionId: subscription.id
+            });
+            this.logger.log(`Updated church subscription ${churchSubscription.id} with stripeSubscriptionId: ${subscription.id}`);
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Failed to retrieve subscription from Stripe: ${invoice.subscription}`, error);
+      }
+    }
 
     if (!churchSubscription) {
       this.logger.warn(`Church subscription not found for invoice: ${invoice.id}`);
@@ -397,9 +460,37 @@ export class PaymentService {
       return;
     }
 
-    const churchSubscription = await this.churchSubscriptionRepository.findOne({
+    // Find church_subscription by stripeSubscriptionId
+    let churchSubscription = await this.churchSubscriptionRepository.findOne({
       where: { stripeSubscriptionId: invoice.subscription as string }
     } as any);
+
+    // Fallback: retrieve subscription from Stripe to get metadata
+    if (!churchSubscription) {
+      try {
+        const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+        if (subscription.metadata?.churchId) {
+          this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
+          churchSubscription = await this.churchSubscriptionRepository.findOne({
+            where: { 
+              churchId: subscription.metadata.churchId,
+              planId: subscription.metadata.planId,
+            },
+            order: { createdAt: 'DESC' }
+          } as any);
+
+          // Update with Stripe subscription ID if found
+          if (churchSubscription && !churchSubscription.stripeSubscriptionId) {
+            await this.churchSubscriptionRepository.update(churchSubscription.id, {
+              stripeSubscriptionId: subscription.id
+            });
+            this.logger.log(`Updated church subscription ${churchSubscription.id} with stripeSubscriptionId: ${subscription.id}`);
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Failed to retrieve subscription from Stripe: ${invoice.subscription}`, error);
+      }
+    }
 
     if (!churchSubscription) {
       this.logger.warn(`Church subscription not found for invoice: ${invoice.id}`);
