@@ -11,9 +11,8 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: process.env.ENV === 'development' ? ['log', 'error', 'warn', 'debug', 'verbose'] : ['error', 'warn'],
-    rawBody: true,
+    rawBody: true, // Preserves req.rawBody for Stripe webhook signature verification
   });
-  // Note: json() middleware configured in AppModule to preserve rawBody for webhooks
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

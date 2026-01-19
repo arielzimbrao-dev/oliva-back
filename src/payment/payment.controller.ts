@@ -94,8 +94,6 @@ export class PaymentController {
       return;
     }
     
-    // Use rawBody preserved by json() middleware's verify function
-    // This contains the original payload string before parsing
     const payload = req.rawBody;
     const signature = req.headers['stripe-signature'] as string;
   
