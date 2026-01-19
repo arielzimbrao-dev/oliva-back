@@ -17,6 +17,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nes
 import Stripe from 'stripe';
 import { JwtAuthGuard } from 'src/modules/auth/jwt/jwt.auth.guard';
 import { PaymentEventRepository } from '../entities/repository/payment-event.repository';
+import { StripeSessionCreationError } from '../common/exceptions/exception';
 
 @ApiTags('Payment')
 @Controller('payment')
@@ -73,8 +74,15 @@ export class PaymentController {
       const session = await this.paymentService.createStripeSession(planId, req.user.churchId);
       return res.status(200).json({ clientSecret: session.client_secret });
     } catch (error) {
-      this.logger.error('Erro ao criar sessão do Stripe', error);
-      return res.status(400).json({ message: 'Erro ao criar sessão do Stripe', error: error.message });
+      this.logger.error('Error creating Stripe session', error.stack);
+      
+      // If it's a known error, rethrow it (NestJS will handle it)
+      if (error.status) {
+        throw error;
+      }
+      
+      // For unknown errors, throw generic error
+      throw new StripeSessionCreationError();
     }
   }
 

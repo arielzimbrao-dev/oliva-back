@@ -9,6 +9,7 @@ import { EmailService } from '../modules/email/email.service';
 import { PaymentSession } from '../entities/payment-session.entity';
 import { DataSource } from 'typeorm';
 import { StripeCheckoutSession, StripeSubscription, StripeInvoice, getEventData } from './dtos/stripe-webhook.types';
+import { PlanNotFoundError, ChurchNotFoundError, PaymentSessionNotFoundError } from '../common/exceptions/exception';
 
 @Injectable()
 export class PaymentService {
@@ -54,12 +55,12 @@ export class PaymentService {
     // Buscar plano pelo planId
     const plan = await this.planRepository.findOneById(planId);
     if (!plan) {
-      throw new Error('Plano não encontrado');
+      throw new PlanNotFoundError();
     }
 
     const church = await this.churchRepository.findOneById(churchId);
     if (!church) {
-      throw new Error('Igreja não encontrada');
+      throw new ChurchNotFoundError();
     }
 
     const currency = church.preferredCurrency || 'USD';
@@ -174,7 +175,8 @@ export class PaymentService {
       // 4. Get plan details
       const plan = await this.planRepository.findOneById(paymentSession.planId);
       if (!plan) {
-        throw new Error(`Plan not found: ${paymentSession.planId}`);
+        this.logger.error(`Plan not found: ${paymentSession.planId}`);
+        throw new PlanNotFoundError();
       }
 
       // 5. Create church_subscription

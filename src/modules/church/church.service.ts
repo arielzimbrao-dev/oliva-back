@@ -15,6 +15,7 @@ import {
   InvalidPlanError,
   AdminRoleNotFoundError,
   PasswordConfirmationMismatchError,
+  ChurchNotFoundError,
 } from '../../common/exceptions/exception';
 import { cryptoUtils } from 'src/common/util/crypto.utils';
 
@@ -31,7 +32,7 @@ export class ChurchService {
 
   async getChurchPublicInfo(churchId: string): Promise<{ name: string; canAddMembers: boolean }> {
     const church = await this.churchRepo.findOneById(churchId);
-    if (!church) throw new Error('Igreja não encontrada');
+    if (!church) throw new ChurchNotFoundError();
     let memberLimit = 99999999;
     if (church.currentSubscriptionPlan && church.currentSubscriptionPlan.plan) {
       memberLimit = church.currentSubscriptionPlan.plan.memberLimit ?? 99999999;
@@ -47,7 +48,7 @@ export class ChurchService {
   async getChurchInfo(churchId: string): Promise<ChurchInfoResponseDto> {
     // Busca dados da igreja
     const church = await this.churchRepo.findOneById(churchId);
-    if (!church) throw new Error('Igreja não encontrada');
+    if (!church) throw new ChurchNotFoundError();
 
     // Busca o plano selecionado (última subscription ativa)
     let planName: string | undefined = undefined;
@@ -167,7 +168,7 @@ export class ChurchService {
 
     async updateChurch(churchId: string, dto: UpdateChurchDto): Promise<ChurchInfoResponseDto> {
       const church = await this.churchRepo.findOneById(churchId);
-      if (!church) throw new Error('Igreja não encontrada');
+      if (!church) throw new ChurchNotFoundError();
       if (dto.name !== undefined) church.name = dto.name;
       if (dto.preferredLanguage !== undefined) church.preferredLanguage = dto.preferredLanguage;
       if (dto.preferredCurrency !== undefined) church.preferredCurrency = dto.preferredCurrency;

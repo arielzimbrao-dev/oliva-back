@@ -44,7 +44,7 @@ export const databaseProviders = [
           PaymentEvent,
         ],
         synchronize: true,
-        logging: true,
+        logging: process.env.DB_LOGGING === 'true',
       });
 
       let ds: DataSource | null = null;

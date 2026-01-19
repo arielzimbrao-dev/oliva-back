@@ -59,3 +59,33 @@ export class EntityNotFoundError extends HttpException {
     super('entity_not_found', HttpStatus.NOT_FOUND);
   }
 }
+
+export class ChurchNotFoundError extends HttpException {
+  constructor() {
+    super('church_not_found', HttpStatus.NOT_FOUND);
+  }
+}
+
+export class PlanNotFoundError extends HttpException {
+  constructor() {
+    super('plan_not_found', HttpStatus.NOT_FOUND);
+  }
+}
+
+export class PaymentSessionNotFoundError extends HttpException {
+  constructor() {
+    super('payment_session_not_found', HttpStatus.NOT_FOUND);
+  }
+}
+
+export class StripeSessionCreationError extends HttpException {
+  constructor() {
+    super('stripe_session_creation_failed', HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class WebhookSignatureError extends HttpException {
+  constructor() {
+    super('invalid_webhook_signature', HttpStatus.BAD_REQUEST);
+  }
+}
