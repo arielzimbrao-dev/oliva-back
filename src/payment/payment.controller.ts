@@ -176,28 +176,47 @@ export class PaymentController {
       // Continue processing even if audit save fails
     }
 
+    // Fetch latest payment-session and church-subscription if metadata is available
+    let paymentSession: any = null;
+    let currentChurchSubscription: any = null;
+
+    if (metadata.churchId && metadata.planId) {
+      try {
+        paymentSession = await this.paymentService.findLatestPaymentSession(
+          metadata.churchId,
+          metadata.planId
+        );
+        currentChurchSubscription = await this.paymentService.findLatestChurchSubscription(
+          metadata.churchId
+        );
+      } catch (fetchError) {
+        this.logger.warn(`Failed to fetch payment-session or church-subscription: ${fetchError.message}`);
+        // Continue processing even if fetch fails - handlers will handle missing data
+      }
+    }
+
     try {
       switch (event.type) {
         case 'checkout.session.completed':
-          await this.paymentService.handleCheckoutSessionCompleted(event);
+          await this.paymentService.handleCheckoutSessionCompleted(event, metadata, currentChurchSubscription, paymentSession);
           break;
         case 'checkout.session.expired':
-          await this.paymentService.handleCheckoutSessionExpired(event);
+          await this.paymentService.handleCheckoutSessionExpired(event, metadata, currentChurchSubscription, paymentSession);
           break;
         case 'customer.subscription.updated':
-          await this.paymentService.handleSubscriptionUpdated(event);
+          await this.paymentService.handleSubscriptionUpdated(event, metadata, currentChurchSubscription, paymentSession);
           break;
         case 'customer.subscription.deleted':
-          await this.paymentService.handleSubscriptionDeleted(event);
+          await this.paymentService.handleSubscriptionDeleted(event, metadata, currentChurchSubscription, paymentSession);
           break;
         case 'invoice.paid':
-          await this.paymentService.handleInvoicePaid(event);
+          await this.paymentService.handleInvoicePaid(event, metadata, currentChurchSubscription, paymentSession);
           break;
         case 'invoice.payment_failed':
-          await this.paymentService.handleInvoicePaymentFailed(event);
+          await this.paymentService.handleInvoicePaymentFailed(event, metadata, currentChurchSubscription, paymentSession);
           break;
         case 'invoice.payment_action_required':
-          await this.paymentService.handleInvoicePaymentActionRequired(event);
+          await this.paymentService.handleInvoicePaymentActionRequired(event, metadata, currentChurchSubscription, paymentSession);
           break;
         default:
           this.logger.log(`Unhandled event type: ${event.type}`);
