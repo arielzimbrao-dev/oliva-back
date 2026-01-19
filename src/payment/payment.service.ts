@@ -5,7 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { ChurchRepository } from 'src/entities/repository/church.repository';
 import { PaymentSessionRepository } from '../entities/repository/payment-session.repository';
 import { ChurchSubscriptionRepository } from '../entities/repository/church-subscription.repository';
-import { PaymentEventRepository } from '../entities/repository/payment-event.repository';
 import { EmailService } from '../modules/email/email.service';
 import { PaymentSession } from '../entities/payment-session.entity';
 import { DataSource } from 'typeorm';
@@ -22,7 +21,6 @@ export class PaymentService {
     private readonly configService: ConfigService,
     private readonly paymentSessionRepository: PaymentSessionRepository,
     private readonly churchSubscriptionRepository: ChurchSubscriptionRepository,
-    private readonly paymentEventRepository: PaymentEventRepository,
     private readonly emailService: EmailService,
     @Inject('DATA_SOURCE') private readonly dataSource: DataSource,
   ) {
@@ -56,7 +54,7 @@ export class PaymentService {
     // Find or create Stripe customer for this church
     let customerId: string | undefined;
     const existingSubscription = await this.churchSubscriptionRepository.findOne({
-      where: { churchId },
+      where: { churchId, status: 'active' },
       order: { createdAt: 'DESC' }
     } as any);
 
@@ -133,21 +131,7 @@ export class PaymentService {
     await queryRunner.startTransaction();
 
     try {
-      // 1. Check if event already processed (idempotency via database)
-      const existingEvent = await this.paymentEventRepository.findOne({
-        where: { 
-          eventType: event.type,
-          sessionId: session.id
-        }
-      } as any);
-
-      if (existingEvent) {
-        this.logger.warn(`Event ${event.id} already processed (duplicate webhook)`);
-        await queryRunner.rollbackTransaction();
-        return;
-      }
-
-      // 2. Find payment_session by sessionId + status='pending'
+      // 1. Find payment_session by sessionId + status='pending'
       const paymentSession = await this.paymentSessionRepository.findOne({
         where: { sessionId: session.id, status: 'pending' }
       } as any);
@@ -186,18 +170,6 @@ export class PaymentService {
         status: 'created' 
       });
 
-      // 7. Log event
-      await this.paymentEventRepository.save({
-        churchId: paymentSession.churchId,
-        customerId: session.customer as string,
-        sessionId: session.id,
-        subscriptionId: subscription.id,
-        eventType: event.type,
-        eventData: event as any,
-        processed: true,
-        processedAt: new Date(),
-      });
-
       await queryRunner.commitTransaction();
       this.logger.log(`Successfully processed checkout.session.completed for church ${paymentSession.churchId}`);
 
@@ -227,15 +199,6 @@ export class PaymentService {
         status: 'expired' 
       });
 
-      await this.paymentEventRepository.save({
-        churchId: paymentSession.churchId,
-        sessionId: session.id,
-        eventType: event.type,
-        eventData: event,
-        processed: true,
-        processedAt: new Date(),
-      });
-
       this.logger.log(`Expired payment session: ${session.id}`);
     }
   }
@@ -262,6 +225,7 @@ export class PaymentService {
         where: { 
           churchId: subscription.metadata.churchId,
           planId: subscription.metadata.planId,
+          status: 'active'
         },
         order: { createdAt: 'DESC' }
       } as any);
@@ -290,16 +254,6 @@ export class PaymentService {
       canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : undefined,
     });
 
-    await this.paymentEventRepository.save({
-      churchId: churchSubscription.churchId,
-      customerId: subscription.customer as string,
-      subscriptionId: subscription.id,
-      eventType: event.type,
-      eventData: event,
-      processed: true,
-      processedAt: new Date(),
-    });
-
     this.logger.log(`Updated church subscription ${churchSubscription.id} to status: ${subscription.status}`);
   }
 
@@ -325,6 +279,7 @@ export class PaymentService {
         where: { 
           churchId: subscription.metadata.churchId,
           planId: subscription.metadata.planId,
+          status: 'active'
         },
         order: { createdAt: 'DESC' }
       } as any);
@@ -338,16 +293,6 @@ export class PaymentService {
     await this.churchSubscriptionRepository.update(churchSubscription.id, {
       status: 'canceled',
       canceledAt: new Date(),
-    });
-
-    await this.paymentEventRepository.save({
-      churchId: churchSubscription.churchId,
-      customerId: subscription.customer as string,
-      subscriptionId: subscription.id,
-      eventType: event.type,
-      eventData: event,
-      processed: true,
-      processedAt: new Date(),
     });
 
     this.logger.log(`Canceled church subscription: ${churchSubscription.id}`);
@@ -382,13 +327,14 @@ export class PaymentService {
     // Fallback: retrieve subscription from Stripe to get metadata
     if (!churchSubscription) {
       try {
-        const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+        const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
         if (subscription.metadata?.churchId) {
           this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
           churchSubscription = await this.churchSubscriptionRepository.findOne({
             where: { 
               churchId: subscription.metadata.churchId,
               planId: subscription.metadata.planId,
+              status: 'active'
             },
             order: { createdAt: 'DESC' }
           } as any);
@@ -402,7 +348,7 @@ export class PaymentService {
           }
         }
       } catch (error) {
-        this.logger.error(`Failed to retrieve subscription from Stripe: ${invoice.subscription}`, error);
+        this.logger.error(`Failed to retrieve subscription from Stripe: ${subscriptionId}`, error);
       }
     }
 
@@ -439,16 +385,6 @@ export class PaymentService {
       });
       this.logger.log(`Reactivated church subscription ${churchSubscription.id}`);
     }
-
-    await this.paymentEventRepository.save({
-      churchId: churchSubscription.churchId,
-      customerId: invoice.customer as string,
-      subscriptionId: subscriptionId,
-      eventType: event.type,
-      eventData: event,
-      processed: true,
-      processedAt: new Date(),
-    });
 
     this.logger.log(`Invoice paid for church ${churchSubscription.churchId}: ${invoice.id}`);
   }
@@ -489,6 +425,7 @@ export class PaymentService {
             where: { 
               churchId: subscription.metadata.churchId,
               planId: subscription.metadata.planId,
+              status: 'active'
             },
             order: { createdAt: 'DESC' }
           } as any);
@@ -514,16 +451,6 @@ export class PaymentService {
     // Mark subscription as past_due
     await this.churchSubscriptionRepository.update(churchSubscription.id, {
       status: 'past_due',
-    });
-
-    await this.paymentEventRepository.save({
-      churchId: churchSubscription.churchId,
-      customerId: invoice.customer as string,
-      subscriptionId: subscriptionId,
-      eventType: event.type,
-      eventData: event as any,
-      processed: true,
-      processedAt: new Date(),
     });
 
     this.logger.error(`Payment failed for church ${churchSubscription.churchId}: ${invoice.id}`);
@@ -572,6 +499,7 @@ export class PaymentService {
             where: { 
               churchId: subscription.metadata.churchId,
               planId: subscription.metadata.planId,
+              status: 'active'
             },
             order: { createdAt: 'DESC' }
           } as any);
@@ -593,16 +521,6 @@ export class PaymentService {
       this.logger.warn(`Church subscription not found for invoice: ${invoice.id}`);
       return;
     }
-
-    await this.paymentEventRepository.save({
-      churchId: churchSubscription.churchId,
-      customerId: invoice.customer as string,
-      subscriptionId: subscriptionId,
-      eventType: event.type,
-      eventData: event as any,
-      processed: true,
-      processedAt: new Date(),
-    });
 
     this.logger.log(`Payment action required for church ${churchSubscription.churchId}: ${invoice.id}`);
 
