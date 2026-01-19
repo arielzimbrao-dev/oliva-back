@@ -1,6 +1,5 @@
 import { UpdateChurchDto } from './dtos/update-church.dto';
-import { Injectable, BadRequestException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import { Injectable } from '@nestjs/common';
 import { RegisterChurchRequestDto } from './dtos/register-church-request.dto';
 import { RegisterChurchResponseDto } from '../auth/dtos/register-church-response.dto';
 import { ChurchInfoResponseDto } from './dtos/church-info-response.dto';

@@ -9,7 +9,7 @@ import { EmailService } from '../modules/email/email.service';
 import { PaymentSession } from '../entities/payment-session.entity';
 import { DataSource } from 'typeorm';
 import { StripeCheckoutSession, StripeSubscription, StripeInvoice, getEventData } from './dtos/stripe-webhook.types';
-import { PlanNotFoundError, ChurchNotFoundError, PaymentSessionNotFoundError } from '../common/exceptions/exception';
+import { PlanNotFoundError, ChurchNotFoundError } from '../common/exceptions/exception';
 
 @Injectable()
 export class PaymentService {

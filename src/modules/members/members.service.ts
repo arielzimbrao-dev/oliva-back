@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IsNull, ILike } from 'typeorm';
 import { MemberRepository } from '../../entities/repository/member.repository';
 import { DepartmentRepository } from '../../entities/repository/department.repository';

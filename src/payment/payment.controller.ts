@@ -4,7 +4,6 @@ import {
   Req,
   HttpCode,
   Logger,
-  Inject,
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -12,7 +11,6 @@ import { PaymentService } from './payment.service';
 import type { RequestWithRawBody } from './request-with-raw-body.interface';
 import { Body, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import { PlansService } from '../modules/plans/plans.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from 'src/modules/auth/jwt/jwt.auth.guard';
@@ -28,7 +26,6 @@ export class PaymentController {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly configService: ConfigService,
-    private readonly plansService: PlansService,
     private readonly paymentEventRepository: PaymentEventRepository,
   ) {
     this.stripe = new Stripe(configService.get<string>('STRIPE_SECRET_KEY') || '', {

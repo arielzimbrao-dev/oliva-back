@@ -1,8 +1,6 @@
-import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserResponseDto, UserListResponseDto, MemberResponseDto, MemberDepartmentResponseDto } from './dtos/user-response.dto';
 import * as bcrypt from 'bcrypt';
-import { User } from '../../entities/user.entity';
-import { Role } from '../../entities/role.entity';
 import { UserRepository } from '../../entities/repository/user.repository';
 import { RoleRepository } from '../../entities/repository/role.repository';
 import { MemberRepository } from '../../entities/repository/member.repository';
