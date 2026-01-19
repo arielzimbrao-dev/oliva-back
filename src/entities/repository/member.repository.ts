@@ -45,7 +45,39 @@ export class MemberRepository {
   softDelete(id: string) {
     return this.base.softDelete(id);
   }
+
   async countByChurchAndStatus(churchId: string, status: string): Promise<number> {
     return this.memberRepository.count({ where: { churchId, status } });
+  }
+
+  async findPaginatedWithDepartments(
+    churchId: string, 
+    filter: string | undefined, 
+    skip: number, 
+    limit: number
+  ) {
+    const whereCondition: any = {
+      churchId,
+      deletedAt: IsNull(),
+    };
+    
+    if (filter) {
+      whereCondition.name = require('typeorm').ILike(`%${filter}%`);
+    }
+    
+    return this.memberRepository.findAndCount({
+      where: whereCondition,
+      relations: ['memberDepartments', 'memberDepartments.department'],
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+  }
+
+  async findByChurchId(churchId: string) {
+    return this.memberRepository.find({
+      where: { churchId, deletedAt: IsNull() },
+      relations: ['memberDepartments', 'memberDepartments.department'],
+    });
   }
 }

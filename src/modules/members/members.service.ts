@@ -28,23 +28,13 @@ export class MembersService {
     // Busca membros com departamentos
     const skip = (page - 1) * limit;
     
-    const whereCondition: any = {
+    const [members, total] = await this.memberRepository.findPaginatedWithDepartments(
       churchId,
-      deletedAt: IsNull(),
-    };
-    
-    // Se houver filtro, usa ILike para busca case-insensitive com correspondência parcial
-    if (filter) {
-      whereCondition.name = ILike(`%${filter}%`);
-    }
-    
-    const [members, total] = await this.memberRepository['memberRepository'].findAndCount({
-      where: whereCondition,
-      relations: ['memberDepartments', 'memberDepartments.department'],
-      order: { createdAt: 'DESC' },
+      filter || undefined,
       skip,
-      take: limit,
-    });
+      limit
+    );
+
     return {
       total,
       page,
@@ -201,13 +191,13 @@ export class MembersService {
     // Para cada relação de casamento
     for (const spouse of spouseRelations) {
       // Verifica se o membro relacionado já está casado
-      const existingMarriages = await this.memberFamilyRepository['memberFamilyRepository'].find({
+      const existingMarriages = await this.memberFamilyRepository.findAll({
         where: [
           { memberId: spouse.id, relation: FamilyRelationType.SPOUSE, deletedAt: IsNull() },
           { relatedMemberId: spouse.id, relation: FamilyRelationType.SPOUSE, deletedAt: IsNull() }
         ],
         relations: ['member', 'relatedMember'],
-      });
+      } as any);
 
       // Se estamos editando, ignorar casamentos com o próprio membro atual
       const validMarriages = existingMarriages.filter(m => {
@@ -263,19 +253,13 @@ export class MembersService {
     const end = new Date(endDate);
     
     // Busca todos os membros ativos da igreja
-    const members = await this.memberRepository['memberRepository'].find({
+    const members = await this.memberRepository.findAll({
       where: { churchId, status: 'ACTIVE', deletedAt: IsNull() },
       select: ['id', 'idMember', 'name', 'birthDate'],
     });
 
     // Busca todas as relações de casamento da igreja
-    const marriages = await this.memberFamilyRepository['memberFamilyRepository'].find({
-      where: { 
-        relation: FamilyRelationType.SPOUSE, 
-        deletedAt: IsNull() 
-      },
-      relations: ['member', 'relatedMember'],
-    });
+    const marriages = await this.memberFamilyRepository.findByChurchId(churchId);
 
     const birthdays: EventDto[] = [];
     const marriagesEvents: EventDto[] = [];
@@ -363,7 +347,7 @@ export class MembersService {
     const totalMembers = await this.memberRepository.countByChurchAndStatus(churchId, 'ACTIVE');
 
     // Buscar todos os membros ativos para análise
-    const allMembers = await this.memberRepository['memberRepository'].find({
+    const allMembers = await this.memberRepository.findAll({
       where: { churchId, status: 'ACTIVE', deletedAt: IsNull() },
       relations: ['memberDepartments'],
     });
@@ -380,7 +364,7 @@ export class MembersService {
     ).length;
 
     // Novos membros servindo (departamentos criados no período)
-    const memberDepartments = await this.memberDepartmentRepository['memberDepartmentRepository'].find({
+    const memberDepartments = await this.memberDepartmentRepository.findAll({
       where: { deletedAt: IsNull() },
       relations: ['member'],
     });

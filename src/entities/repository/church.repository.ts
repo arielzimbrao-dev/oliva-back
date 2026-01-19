@@ -45,4 +45,11 @@ export class ChurchRepository {
   softDelete(id: string) {
     return this.base.softDelete(id);
   }
+
+  findByIdWithRelations(id: string) {
+    return this.base.findOne({
+      where: { id },
+      relations: ['users', 'members']
+    } as any);
+  }
 }

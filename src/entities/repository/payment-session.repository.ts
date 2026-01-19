@@ -41,4 +41,26 @@ export class PaymentSessionRepository {
   softDelete(id: string) {
     return this.base.softDelete(id);
   }
+
+  findLatestByChurchAndPlan(churchId: string, planId: string) {
+    return this.base.findOne({
+      where: { churchId, planId },
+      order: { createdAt: 'DESC' }
+    } as any);
+  }
+
+  findBySessionId(sessionId: string, status?: string) {
+    const where: any = { sessionId };
+    if (status) {
+      where.status = status;
+    }
+    return this.base.findOne({ where } as any);
+  }
+
+  findLatestByChurchAndPlanAndStatus(churchId: string, planId: string, status: string) {
+    return this.base.findOne({
+      where: { churchId, planId, status },
+      order: { createdAt: 'DESC' }
+    } as any);
+  }
 }

@@ -65,10 +65,7 @@ export class EmailService {
       }
 
       // Find user by email (without leaking user existence info)
-      const user = await this.userRepository.findOne({ 
-        where: { email },
-        relations: ['church'],
-      });
+      const user = await this.userRepository.findByEmail(email, ['church']);
       
       if (!user) {
         // Don't reveal if user exists - log internally but return success to client

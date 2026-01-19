@@ -22,7 +22,7 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string): Promise<LoginResponseDto> {
-    const user = await this.userRepo.findOne({ where: { email }, relations: ['members', 'church', 'role'] } as any);
+    const user = await this.userRepo.findByEmailWithRelations(email);
     if (!user) throw new UnauthorizedException();
 
     const ok = await cryptoUtils.compare(password, user.password);
@@ -35,11 +35,7 @@ export class AuthService {
     // Buscar subscription status (apenas para admin)
     let subscriptionStatus: 'trial' | 'active' | 'failed' | null = null;
     if (isAdmin) {
-      const subscription = await this.churchSubscriptionRepo.findOne({
-        where: { churchId: user.churchId },
-        relations: ['plan'],
-        order: { createdAt: 'DESC' }
-      } as any);
+      const subscription = await this.churchSubscriptionRepo.findLatestByChurchIdWithPlan(user.churchId);
 
       if (subscription) {
         // Trial é identificado pelo plano "Trial" (amountDolar = 0.00)
@@ -91,7 +87,7 @@ export class AuthService {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken);
       // Busca o usuário novamente para garantir dados atualizados
-      const user = await this.userRepo.findOne({ where: { id: payload.sub }, relations: ['members', 'church', 'role'] } as any);
+      const user = await this.userRepo.findByIdWithRelations(payload.sub);
       if (!user) throw new UnauthorizedException();
       const memberName = user.members && user.members.length > 0 ? user.members[0].name : undefined;
       const churchName = user.church ? user.church.name : undefined;
@@ -113,10 +109,7 @@ export class AuthService {
 
   async forgotPassword(email: string): Promise<{ message: string }> {
     // Buscar usuário pelo email com suas relações
-    const user = await this.userRepo.findOne({ 
-      where: { email }, 
-      relations: ['members', 'church'] 
-    } as any);
+    const user = await this.userRepo.findByEmail(email, ['members', 'church']);
 
     if (!user) {
       throw new UserNotFoundError();

@@ -41,4 +41,46 @@ export class ChurchSubscriptionRepository {
   softDelete(id: string) {
     return this.base.softDelete(id);
   }
+
+  findLatestByChurchId(churchId: string) {
+    return this.base.findOne({
+      where: { churchId },
+      order: { createdAt: 'DESC' }
+    } as any);
+  }
+
+  findByStripeSubscriptionId(stripeSubscriptionId: string) {
+    return this.base.findOne({
+      where: { stripeSubscriptionId }
+    } as any);
+  }
+
+  findByChurchAndPlanAndStatus(churchId: string, planId: string, status: string) {
+    return this.base.findOne({
+      where: { churchId, planId, status },
+      order: { createdAt: 'DESC' }
+    } as any);
+  }
+
+  findActiveByChurchId(churchId: string) {
+    return this.base.findOne({
+      where: { churchId, status: 'active' },
+      order: { createdAt: 'DESC' }
+    } as any);
+  }
+
+  findByChurchAndPlan(churchId: string, planId: string) {
+    return this.base.findOne({
+      where: { churchId, planId },
+      order: { createdAt: 'DESC' }
+    } as any);
+  }
+
+  findLatestByChurchIdWithPlan(churchId: string) {
+    return this.base.findOne({
+      where: { churchId },
+      relations: ['plan'],
+      order: { createdAt: 'DESC' }
+    } as any);
+  }
 }

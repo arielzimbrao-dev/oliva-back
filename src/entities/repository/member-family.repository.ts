@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Repository, FindOneOptions, FindManyOptions } from 'typeorm';
-import { MemberFamily } from '../member-family.entity';
+import { MemberFamily, FamilyRelationType } from '../member-family.entity';
 import { BaseRepository } from '../../common/repository/base.repository';
 
 @Injectable()
@@ -40,5 +40,25 @@ export class MemberFamilyRepository {
 
   softDelete(id: string) {
     return this.base.softDelete(id);
+  }
+
+  async findByMemberIds(memberIds: string[]) {
+    return this.memberFamilyRepository.find({
+      where: memberIds.flatMap(id => [
+        { member1Id: id },
+        { member2Id: id }
+      ]) as any
+    });
+  }
+
+  async findByChurchId(churchId: string) {
+    // MemberFamily não tem churchId diretamente, então precisamos filtrar após carregar
+    return this.memberFamilyRepository.find({
+      where: { 
+        relation: FamilyRelationType.SPOUSE,
+        deletedAt: undefined as any
+      },
+      relations: ['member', 'relatedMember']
+    });
   }
 }

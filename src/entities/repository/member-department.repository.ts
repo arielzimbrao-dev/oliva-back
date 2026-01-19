@@ -41,4 +41,11 @@ export class MemberDepartmentRepository {
   softDelete(id: string) {
     return this.base.softDelete(id);
   }
+
+  async findByMemberIds(memberIds: string[]) {
+    return this.memberDepartmentRepository.find({
+      where: memberIds.map(id => ({ memberId: id })) as any,
+      relations: ['department']
+    });
+  }
 }

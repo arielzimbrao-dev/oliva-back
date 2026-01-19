@@ -34,10 +34,7 @@ export class PaymentService {
    * Helper method to find the latest payment session by churchId and planId
    */
   async findLatestPaymentSession(churchId: string, planId: string): Promise<PaymentSession | null> {
-    return await this.paymentSessionRepository.findOne({
-      where: { churchId, planId },
-      order: { createdAt: 'DESC' }
-    } as any);
+    return await this.paymentSessionRepository.findLatestByChurchAndPlan(churchId, planId);
   }
 
   /**
@@ -45,10 +42,7 @@ export class PaymentService {
    * Returns the current active subscription regardless of plan
    */
   async findLatestChurchSubscription(churchId: string) {
-    return await this.churchSubscriptionRepository.findOne({
-      where: { churchId },
-      order: { createdAt: 'DESC' }
-    } as any);
+    return await this.churchSubscriptionRepository.findLatestByChurchId(churchId);
   }
 
   async createStripeSession(planId: string, churchId: string): Promise<Stripe.Checkout.Session> {
@@ -75,10 +69,7 @@ export class PaymentService {
 
     // Find or create Stripe customer for this church
     let customerId: string | undefined;
-    const existingSubscription = await this.churchSubscriptionRepository.findOne({
-      where: { churchId, status: 'active' },
-      order: { createdAt: 'DESC' }
-    } as any);
+    const existingSubscription = await this.churchSubscriptionRepository.findActiveByChurchId(churchId);
 
     if (existingSubscription?.stripeCustomerId) {
       customerId = existingSubscription.stripeCustomerId;
@@ -159,9 +150,7 @@ export class PaymentService {
 
     try {
       // 1. Find payment_session by sessionId + status='pending'
-      const paymentSession = await this.paymentSessionRepository.findOne({
-        where: { sessionId: session.id, status: 'pending' }
-      } as any);
+      const paymentSession = await this.paymentSessionRepository.findBySessionId(session.id, 'pending');
 
       if (!paymentSession) {
         this.logger.warn(`Payment session not found or already processed: ${session.id}`);
@@ -226,9 +215,7 @@ export class PaymentService {
     // Use paymentSession passed from controller or fallback to query
     let paymentSessionToExpire = paymentSession;
     if (!paymentSessionToExpire) {
-      paymentSessionToExpire = await this.paymentSessionRepository.findOne({
-        where: { sessionId: session.id, status: 'pending' }
-      } as any);
+      paymentSessionToExpire = await this.paymentSessionRepository.findBySessionId(session.id, 'pending');
     }
 
     if (paymentSessionToExpire && paymentSessionToExpire.status === 'pending') {
@@ -250,9 +237,10 @@ export class PaymentService {
     paymentSession: PaymentSession | null
   ): Promise<void> {
     const subscription = getEventData<StripeSubscription>(event);
-    this.logger.log('Subscription updated: ' + subscription);
     
     this.logger.log(`Processing subscription.updated: ${subscription.id}`);
+    this.logger.log(`Subscription status: ${subscription.status}`);
+    this.logger.log(`Subscription current_period_end: ${subscription.current_period_end}`);
     this.logger.log(`Subscription metadata: ${JSON.stringify(subscription.metadata)}`);
 
     // Use churchSubscription passed from controller or fallback to query
@@ -260,21 +248,16 @@ export class PaymentService {
     
     if (!foundChurchSubscription) {
       // Find church_subscription by stripeSubscriptionId OR by metadata
-      foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-        where: { stripeSubscriptionId: subscription.id }
-      } as any);
+      foundChurchSubscription = await this.churchSubscriptionRepository.findByStripeSubscriptionId(subscription.id);
 
       // Fallback: try to find by churchId from metadata
       if (!foundChurchSubscription && subscription.metadata?.churchId) {
         this.logger.log(`Trying to find subscription by churchId from metadata: ${subscription.metadata.churchId}`);
-        foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-          where: { 
-            churchId: subscription.metadata.churchId,
-            planId: subscription.metadata.planId,
-            status: 'active'
-          },
-          order: { createdAt: 'DESC' }
-        } as any);
+        foundChurchSubscription = await this.churchSubscriptionRepository.findByChurchAndPlanAndStatus(
+          subscription.metadata.churchId,
+          subscription.metadata.planId,
+          'active'
+        );
       }
     }
 
@@ -291,15 +274,29 @@ export class PaymentService {
       return;
     }
 
-    // Update subscription details
-    await this.churchSubscriptionRepository.update(foundChurchSubscription.id, {
+    // Update subscription details - validate timestamps before creating Date objects
+    const updateData: any = {
       status: subscription.status === 'active' ? 'active' : 
               subscription.status === 'past_due' ? 'past_due' :
               subscription.status === 'canceled' ? 'canceled' : 'expired',
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : undefined,
-      canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : undefined,
-    });
+    };
+
+    // Only set currentPeriodEnd if the timestamp is valid
+    if (subscription.current_period_end && !isNaN(subscription.current_period_end)) {
+      updateData.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+    }
+
+    // Only set cancelAt if the timestamp exists and is valid
+    if (subscription.cancel_at && !isNaN(subscription.cancel_at)) {
+      updateData.cancelAt = new Date(subscription.cancel_at * 1000);
+    }
+
+    // Only set canceledAt if the timestamp exists and is valid
+    if (subscription.canceled_at && !isNaN(subscription.canceled_at)) {
+      updateData.canceledAt = new Date(subscription.canceled_at * 1000);
+    }
+
+    await this.churchSubscriptionRepository.update(foundChurchSubscription.id, updateData);
 
     this.logger.log(`Updated church subscription ${foundChurchSubscription.id} to status: ${subscription.status}`);
   }
@@ -324,21 +321,16 @@ export class PaymentService {
     
     if (!foundChurchSubscription) {
       // Find church_subscription by stripeSubscriptionId OR by metadata
-      foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-        where: { stripeSubscriptionId: subscription.id }
-      } as any);
+      foundChurchSubscription = await this.churchSubscriptionRepository.findByStripeSubscriptionId(subscription.id);
 
       // Fallback: try to find by churchId from metadata
       if (!foundChurchSubscription && subscription.metadata?.churchId) {
         this.logger.log(`Trying to find subscription by churchId from metadata: ${subscription.metadata.churchId}`);
-        foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-          where: { 
-            churchId: subscription.metadata.churchId,
-            planId: subscription.metadata.planId,
-            status: 'active'
-          },
-          order: { createdAt: 'DESC' }
-        } as any);
+        foundChurchSubscription = await this.churchSubscriptionRepository.findByChurchAndPlanAndStatus(
+          subscription.metadata.churchId,
+          subscription.metadata.planId,
+          'active'
+        );
       }
     }
 
@@ -386,9 +378,7 @@ export class PaymentService {
     
     if (!foundChurchSubscription) {
       // Find church_subscription by stripeSubscriptionId
-      foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-        where: { stripeSubscriptionId: subscriptionId }
-      } as any);
+      foundChurchSubscription = await this.churchSubscriptionRepository.findByStripeSubscriptionId(subscriptionId);
 
       // Fallback: retrieve subscription from Stripe to get metadata
       if (!foundChurchSubscription) {
@@ -396,13 +386,10 @@ export class PaymentService {
           const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
           if (subscription.metadata?.churchId) {
             this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
-            foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-              where: { 
-                churchId: subscription.metadata.churchId,
-                planId: subscription.metadata.planId
-              },
-              order: { createdAt: 'DESC' }
-            } as any);
+            foundChurchSubscription = await this.churchSubscriptionRepository.findByChurchAndPlan(
+              subscription.metadata.churchId,
+              subscription.metadata.planId
+            );
           }
         } catch (error) {
           this.logger.error(`Failed to retrieve subscription from Stripe: ${subscriptionId}`, error);
@@ -427,14 +414,11 @@ export class PaymentService {
     let pendingPaymentSession = paymentSession;
     if (!pendingPaymentSession || pendingPaymentSession.status !== 'created') {
       // Check if there's a payment_session with status 'created' waiting to be activated
-      pendingPaymentSession = await this.paymentSessionRepository.findOne({
-        where: { 
-          churchId: foundChurchSubscription.churchId,
-          planId: foundChurchSubscription.planId,
-          status: 'created'
-        },
-        order: { createdAt: 'DESC' }
-      } as any);
+      pendingPaymentSession = await this.paymentSessionRepository.findLatestByChurchAndPlanAndStatus(
+        foundChurchSubscription.churchId,
+        foundChurchSubscription.planId,
+        'created'
+      );
     }
 
     if (pendingPaymentSession && pendingPaymentSession.status === 'created') {
@@ -490,9 +474,7 @@ export class PaymentService {
     
     if (!foundChurchSubscription) {
       // Find church_subscription by stripeSubscriptionId
-      foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-        where: { stripeSubscriptionId: subscriptionId }
-      } as any);
+      foundChurchSubscription = await this.churchSubscriptionRepository.findByStripeSubscriptionId(subscriptionId);
 
       // Fallback: retrieve subscription from Stripe to get metadata
       if (!foundChurchSubscription) {
@@ -500,13 +482,10 @@ export class PaymentService {
           const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
           if (subscription.metadata?.churchId) {
             this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
-            foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-              where: { 
-                churchId: subscription.metadata.churchId,
-                planId: subscription.metadata.planId
-              },
-              order: { createdAt: 'DESC' }
-            } as any);
+            foundChurchSubscription = await this.churchSubscriptionRepository.findByChurchAndPlan(
+              subscription.metadata.churchId,
+              subscription.metadata.planId
+            );
           }
         } catch (error) {
           this.logger.error(`Failed to retrieve subscription from Stripe: ${subscriptionId}`, error);
@@ -573,9 +552,7 @@ export class PaymentService {
     
     if (!foundChurchSubscription) {
       // Find church_subscription by stripeSubscriptionId
-      foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-        where: { stripeSubscriptionId: subscriptionId }
-      } as any);
+      foundChurchSubscription = await this.churchSubscriptionRepository.findByStripeSubscriptionId(subscriptionId);
 
       // Fallback: retrieve subscription from Stripe to get metadata
       if (!foundChurchSubscription) {
@@ -583,13 +560,10 @@ export class PaymentService {
           const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
           if (subscription.metadata?.churchId) {
             this.logger.log(`Trying to find subscription by churchId from Stripe metadata: ${subscription.metadata.churchId}`);
-            foundChurchSubscription = await this.churchSubscriptionRepository.findOne({
-              where: { 
-                churchId: subscription.metadata.churchId,
-                planId: subscription.metadata.planId
-              },
-              order: { createdAt: 'DESC' }
-            } as any);
+            foundChurchSubscription = await this.churchSubscriptionRepository.findByChurchAndPlan(
+              subscription.metadata.churchId,
+              subscription.metadata.planId
+            );
           }
         } catch (error) {
           this.logger.error(`Failed to retrieve subscription from Stripe: ${subscriptionId}`, error);

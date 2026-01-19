@@ -57,4 +57,25 @@ export class UserRepository {
   softDelete(id: string) {
     return this.base.softDelete(id);
   }
+
+  findByEmail(email: string, relations?: string[]) {
+    return this.base.findOne({
+      where: { email },
+      relations
+    } as any);
+  }
+
+  findByEmailWithRelations(email: string) {
+    return this.base.findOne({
+      where: { email },
+      relations: ['members', 'church', 'role']
+    } as any);
+  }
+
+  findByIdWithRelations(id: string) {
+    return this.base.findOne({
+      where: { id },
+      relations: ['members', 'church', 'role']
+    } as any);
+  }
 }
