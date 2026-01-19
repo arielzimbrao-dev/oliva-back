@@ -266,6 +266,7 @@ export class PaymentService {
    */
   async handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
     const subscription = getEventData<StripeSubscription>(event);
+    this.logger.log('Subscription updated: ' + subscription);
     
     this.logger.log(`Processing subscription.updated: ${subscription.id}`);
 
@@ -307,6 +308,7 @@ export class PaymentService {
    */
   async handleSubscriptionDeleted(event: Stripe.Event): Promise<void> {
     const subscription = getEventData<StripeSubscription>(event);
+    this.logger.log('Subscription updated: ' + subscription);
     
     this.logger.log(`Processing subscription.deleted: ${subscription.id}`);
 
@@ -342,6 +344,7 @@ export class PaymentService {
    */
   async handleInvoicePaid(event: Stripe.Event): Promise<void> {
     const invoice = getEventData<StripeInvoice>(event);
+    this.logger.log('Subscription updated: ' + invoice);
     
     this.logger.log(`Processing invoice.paid: ${invoice.id}`);
 
@@ -385,6 +388,7 @@ export class PaymentService {
    */
   async handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
     const invoice = getEventData<StripeInvoice>(event);
+    this.logger.log('Subscription updated: ' + invoice);
     
     this.logger.log(`Processing invoice.payment_failed: ${invoice.id}`);
 

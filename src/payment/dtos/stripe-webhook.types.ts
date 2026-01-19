@@ -3,6 +3,7 @@
  * Based on official Stripe API documentation
  */
 
+import { Logger } from '@nestjs/common';
 import Stripe from 'stripe';
 
 // Main DTOs for Subscription Flow
